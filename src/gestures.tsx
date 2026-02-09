@@ -164,7 +164,7 @@ export const ToastSwipeHandler: React.FC<
 
   const tap = Gesture.Tap().onEnd(() => {
     'worklet';
-    runOnJS(onEnd)();
+
     if (onPress) {
       runOnJS(onPress)();
     }
