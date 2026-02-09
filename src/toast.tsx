@@ -323,6 +323,9 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         onBegin: () => {
           isDragging.current = true;
         },
+        onEnd: () => {
+          isDragging.current = false;
+        },
         onFinalize: () => {
           isDragging.current = false;
           const timeElapsed = Date.now() - timerStart.current!;

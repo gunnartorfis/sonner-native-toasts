@@ -20,6 +20,7 @@ type ToastSwipeHandlerProps = Pick<ToastProps, 'important'> & {
   onRemove: () => void;
   style?: ViewStyle | (ViewStyle | undefined)[];
   onBegin: () => void;
+  onEnd: () => void;
   onFinalize: () => void;
   enabled?: boolean;
   unstyled?: boolean;
@@ -34,6 +35,7 @@ export const ToastSwipeHandler: React.FC<
   onRemove,
   style,
   onBegin,
+  onEnd,
   onFinalize,
   enabled,
   unstyled,
@@ -50,7 +52,7 @@ export const ToastSwipeHandler: React.FC<
   const position = positionProps || positionCtx;
 
   const pan = Gesture.Pan()
-    .onBegin(() => {
+    .onStart(() => {
       'worklet';
 
       if (!enabled) {
@@ -83,7 +85,7 @@ export const ToastSwipeHandler: React.FC<
         }
       }
     })
-    .onFinalize(() => {
+    .onEnd(() => {
       'worklet';
 
       if (!enabled) {
@@ -133,6 +135,7 @@ export const ToastSwipeHandler: React.FC<
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
+          runOnJS(onEnd)();
         } else if (shouldDismiss) {
           translate.value = withTiming(
             -WINDOW_WIDTH,
@@ -157,6 +160,7 @@ export const ToastSwipeHandler: React.FC<
 
   const tap = Gesture.Tap().onEnd(() => {
     'worklet';
+    runOnJS(onEnd)();
     if (onPress) {
       runOnJS(onPress)();
     }
