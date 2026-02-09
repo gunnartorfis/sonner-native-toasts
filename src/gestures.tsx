@@ -100,6 +100,7 @@ export const ToastSwipeHandler: React.FC<
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
+          runOnJS(onEnd)();
           return;
         }
 
@@ -116,6 +117,7 @@ export const ToastSwipeHandler: React.FC<
             }
           );
         } else {
+          runOnJS(onEnd)();
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
@@ -127,15 +129,16 @@ export const ToastSwipeHandler: React.FC<
 
         // If dragged in wrong direction, always spring back
         if (isWrongDirection) {
+          runOnJS(onEnd)();
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
             duration: 400,
           });
         } else if (Math.abs(translate.value) < 16) {
+          runOnJS(onEnd)();
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
-          runOnJS(onEnd)();
         } else if (shouldDismiss) {
           translate.value = withTiming(
             -WINDOW_WIDTH,
@@ -149,6 +152,7 @@ export const ToastSwipeHandler: React.FC<
             }
           );
         } else {
+          runOnJS(onEnd)();
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
