@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.1](https://github.com/gunnartorfis/react-native-reanimated-toasts/compare/v0.23.0...v0.23.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* remove early return to resume timer after tap or slight drag ([4e7692d](https://github.com/gunnartorfis/react-native-reanimated-toasts/commit/4e7692d38c9e1e41f5ac615aa12f52995affb209))
+
 # [0.23.0](https://github.com/gunnartorfis/react-native-reanimated-toasts/compare/v0.23.0-beta.1...v0.23.0) (2026-01-11)
 
 

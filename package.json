@@ -1,6 +1,6 @@
 {
   "name": "sonner-native",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "description": "An opinionated toast component for React Native. A port of @emilkowalski's sonner.",
   "source": "./src/index.tsx",
   "main": "./lib/module/index.js",
