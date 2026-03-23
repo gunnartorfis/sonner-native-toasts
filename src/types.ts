@@ -5,6 +5,7 @@ export type ToastStyles = {
   toastContainer?: ViewStyle;
   toast?: ViewStyle;
   toastContent?: ViewStyle;
+  textContainer?: ViewStyle;
   title?: TextStyle;
   description?: TextStyle;
   buttons?: ViewStyle;
@@ -119,6 +120,7 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
     buttonsStyle?: ViewStyle;
     closeButtonStyle?: ViewStyle;
     closeButtonIconStyle?: ViewStyle;
+    textContainerStyle?: ViewStyle;
     backgroundComponent?: React.ReactNode;
     success?: ViewStyle;
     error?: ViewStyle;

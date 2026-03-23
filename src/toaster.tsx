@@ -353,6 +353,10 @@ export const ToasterUI: React.FC<
                       ...props.styles?.toastContent,
                       ...toastToRender.styles?.toastContent,
                     },
+                    textContainer: {
+                      ...props.styles?.textContainer,
+                      ...toastToRender.styles?.textContainer,
+                    },
                     title: {
                       ...props.styles?.title,
                       ...toastToRender.styles?.title,
