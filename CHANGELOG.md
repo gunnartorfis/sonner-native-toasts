@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.24.0](https://github.com/gunnartorfis/react-native-reanimated-toasts/compare/v0.23.1...v0.24.0) (2026-04-01)
+
+
+### Features
+
+* allow toast text container to be styled ([22d2e80](https://github.com/gunnartorfis/react-native-reanimated-toasts/commit/22d2e80ed970c9dfd84a9b6934520fb3e5c3d929))
+
 ## [0.23.1](https://github.com/gunnartorfis/react-native-reanimated-toasts/compare/v0.23.0...v0.23.1) (2026-02-11)
 
 
