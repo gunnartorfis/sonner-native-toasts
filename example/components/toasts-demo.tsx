@@ -481,6 +481,17 @@ export const ToastDemo: React.FC = () => {
           });
         }}
       />
+      <Button
+        title="Centered toast"
+        onPress={() => {
+          toast.success('Centered', {
+            styles: {
+              textContainer: { flex: 0 },
+              toast: { marginInline: 'auto' },
+            },
+          });
+        }}
+      />
     </ScrollView>
   );
 };
