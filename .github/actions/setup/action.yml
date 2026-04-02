@@ -12,18 +12,20 @@ runs:
     - name: Install pnpm
       uses: pnpm/action-setup@v4
 
-    - name: Cache dependencies
+    - name: Get pnpm store directory
+      id: pnpm-store-path
+      run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Cache pnpm store
       id: pnpm-cache
       uses: actions/cache@v3
       with:
-        path: |
-          **/node_modules
-        key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/package.json', '!node_modules/**') }}
+        path: ${{ steps.pnpm-store-path.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          ${{ runner.os }}-pnpm-
+          ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
-      if: steps.pnpm-cache.outputs.cache-hit != 'true'
       run: pnpm install --frozen-lockfile
       shell: bash
