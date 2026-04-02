@@ -60,13 +60,8 @@ buck-out/
 android/app/libs
 android/keystores/debug.keystore
 
-# Yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+# pnpm
+pnpm-debug.log
 
 # Expo
 .expo/
@@ -83,5 +78,6 @@ android/generated
 
 example/ios
 example/android
+example/expo-env.d.ts
 
 docs/.envrc
