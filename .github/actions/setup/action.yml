@@ -9,19 +9,23 @@ runs:
       with:
         node-version-file: .nvmrc
 
-    - name: Cache dependencies
-      id: yarn-cache
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Get pnpm store directory
+      id: pnpm-store-path
+      run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Cache pnpm store
+      id: pnpm-cache
       uses: actions/cache@v3
       with:
-        path: |
-          **/node_modules
-          .yarn/install-state.gz
-        key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-${{ hashFiles('**/package.json', '!node_modules/**') }}
+        path: ${{ steps.pnpm-store-path.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          ${{ runner.os }}-yarn-
+          ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
-      if: steps.yarn-cache.outputs.cache-hit != 'true'
-      run: yarn install --immutable
+      run: pnpm install --frozen-lockfile
       shell: bash
