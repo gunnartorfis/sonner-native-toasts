@@ -153,12 +153,12 @@ export const ToasterUI: React.FC<ToasterProps> = ({
             .map((toastToRender) => {
               const ToastToRender = (
                 <Toast
+                  {...props}
                   {...toastToRender}
                   onDismiss={onDismiss}
                   onAutoClose={onAutoClose}
                   ref={toastStore.getToastRef(toastToRender.id)}
                   key={toastToRender.id}
-                  {...props}
                 />
               );
 
