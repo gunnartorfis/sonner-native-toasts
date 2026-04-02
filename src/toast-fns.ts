@@ -51,6 +51,7 @@ toast.promise = <T,>(promise: Promise<T>, options: Parameters<typeof toastType.p
     ...restOptions,
     title: loading,
     variant: 'info',
+    styles: options.styles?.loading,
     promiseOptions: {
       promise: promise as Promise<unknown>,
       loading,
