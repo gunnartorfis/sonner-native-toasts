@@ -1,14 +1,15 @@
 import { Text } from '@react-navigation/elements';
 import { Link } from 'expo-router';
 import { ScrollView } from 'react-native';
-import { ToastDemo } from '../components/toasts-demo';
+import ToastDemo from '../components/toast-demo';
 
 export default function Index() {
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{
-        padding: 20,
+        paddingVertical: 20,
+        flex: 1,
       }}
     >
       <Link href="/modal">

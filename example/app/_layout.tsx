@@ -1,39 +1,63 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '../hooks/useColorScheme';
-import { Toaster } from 'sonner-native';
+import * as React from 'react';
+import { Stack, useGlobalSearchParams } from 'expo-router';
+import { Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Toaster, type ToastPosition } from 'sonner-native';
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+const RootLayout: React.FC = () => {
+  const params = useGlobalSearchParams<{
+    stacking?: string;
+    position?: string;
+  }>();
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  const stackingEnabled = params.stacking !== 'false';
+  const defaultPosition = (params.position as ToastPosition) || 'top-center';
 
   return (
-    <GestureHandlerRootView>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="+not-found" />
+          {/* Tabs group - all tab screens are handled in (tabs)/_layout.tsx */}
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+            }}
+          />
+          {/* Modal screens outside of tabs */}
+          <Stack.Screen
+            name="modal"
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              title: 'Modal',
+            }}
+          />
         </Stack>
-        <StatusBar style="auto" />
-        <Toaster />
-      </ThemeProvider>
-    </GestureHandlerRootView>
+        <Toaster
+          position={defaultPosition}
+          duration={30000}
+          swipeToDismissDirection="up"
+          visibleToasts={4}
+          closeButton
+          autoWiggleOnUpdate="toast-change"
+          theme="system"
+          enableStacking={stackingEnabled}
+          icons={{
+            error: <Text>💥</Text>,
+            loading: <Text>🔄</Text>,
+          }}
+          toastOptions={{
+            actionButtonStyle: {
+              paddingHorizontal: 20,
+            },
+          }}
+          pauseWhenPageIsHidden
+        />
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
-}
+};
+
+export default RootLayout;

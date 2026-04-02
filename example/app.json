@@ -2,45 +2,34 @@
   "expo": {
     "name": "sonner-native-example",
     "slug": "sonner-native-example",
+    "scheme": "sonner-native-example",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "sonnernativeexample",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "experiments": {
+      "reactCompiler": true
+    },
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gunnartorfis.sonnernativeexample"
+      "bundleIdentifier": "reanimatedtoasts.example"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.gunnartorfis.sonnernativeexample"
+      "package": "reanimatedtoasts.example"
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ],
-      "expo-font",
-      "expo-web-browser"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
+    "plugins": ["expo-router"]
   }
 }

@@ -1,16 +1,13 @@
-import { Platform, ScrollView } from 'react-native';
-import { ToastDemo } from '../components/toasts-demo';
+import * as React from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import ToastDemo from '../components/toast-demo';
 
-export default function Index() {
+const ModalScreen: React.FC = () => {
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{
-        paddingTop: Platform.OS === 'ios' ? 0 : 20,
-        paddingHorizontal: 20,
-      }}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
       <ToastDemo />
-    </ScrollView>
+    </SafeAreaView>
   );
-}
+};
+
+export default ModalScreen;
