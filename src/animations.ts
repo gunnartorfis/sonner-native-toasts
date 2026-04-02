@@ -1,15 +1,20 @@
 import { withTiming } from 'react-native-reanimated';
+import { getEnteringTranslateY, getExitingTranslateY } from './animation-utils';
+import { toastDefaultValues } from './constants';
 import { useToastContext } from './context';
-import { easeInOutCubic, easeOutCirc } from './easings';
+import { easeInOutCubic, easeOutQuartFn } from './easings';
 import type { ToastPosition } from './types';
 
-export const ANIMATION_DURATION = 300;
+export const ANIMATION_DURATION = 600;
 
 export const useToastLayoutAnimations = (
-  positionProp: ToastPosition | undefined
+  positionProp: ToastPosition | undefined,
+  isHiddenByLimit?: boolean,
+  numberOfToasts?: number
 ) => {
-  const { position: positionCtx } = useToastContext();
+  const { position: positionCtx, gap } = useToastContext();
   const position = positionProp || positionCtx;
+  const stackGap = gap ?? toastDefaultValues.stackGap;
 
   return {
     entering: () => {
@@ -18,46 +23,41 @@ export const useToastLayoutAnimations = (
     },
     exiting: () => {
       'worklet';
-      return getToastExiting({ position });
+      return getToastExiting({ position, isHiddenByLimit, numberOfToasts, stackGap });
     },
   };
 };
 
 type GetToastAnimationParams = {
   position: ToastPosition;
+  isHiddenByLimit?: boolean;
+  numberOfToasts?: number;
+  stackGap?: number;
 };
 
 export const getToastEntering = ({ position }: GetToastAnimationParams) => {
   'worklet';
 
   const animations = {
-    opacity: withTiming(1, { easing: easeOutCirc }),
+    opacity: withTiming(1, {
+      easing: easeOutQuartFn,
+      duration: ANIMATION_DURATION,
+    }),
     transform: [
-      { scale: withTiming(1, { easing: easeOutCirc }) },
       {
         translateY: withTiming(0, {
-          easing: easeOutCirc,
+          easing: easeOutQuartFn,
+          duration: ANIMATION_DURATION,
         }),
       },
     ],
   };
 
-  const translateY = (() => {
-    if (position === 'top-center') {
-      return -50;
-    }
-
-    if (position === 'bottom-center') {
-      return 50;
-    }
-
-    return 0;
-  })();
+  const translateY = getEnteringTranslateY(position);
 
   const initialValues = {
     opacity: 0,
     transform: [
-      { scale: 0 },
       {
         translateY,
       },
@@ -70,20 +70,39 @@ export const getToastEntering = ({ position }: GetToastAnimationParams) => {
   };
 };
 
-export const getToastExiting = ({ position }: GetToastAnimationParams) => {
+export const getToastExiting = ({
+  position,
+  isHiddenByLimit,
+  numberOfToasts,
+  stackGap = 8,
+}: GetToastAnimationParams) => {
   'worklet';
 
-  const translateY = (() => {
-    if (position === 'top-center') {
-      return -150;
-    }
+  // If toast is hidden by visibility limit, only fade out without sliding
+  if (isHiddenByLimit) {
+    const animations = {
+      opacity: withTiming(0, {
+        easing: easeInOutCubic,
+        duration: ANIMATION_DURATION,
+      }),
+    };
 
-    if (position === 'bottom-center') {
-      return 150;
-    }
+    const initialValues = {
+      opacity: 1,
+    };
 
-    return 50;
-  })();
+    return {
+      initialValues,
+      animations,
+    };
+  }
+
+  const translateY = getExitingTranslateY({
+    position,
+    isHiddenByLimit,
+    numberOfToasts,
+    stackGap,
+  });
 
   const animations = {
     opacity: withTiming(0, { easing: easeInOutCubic }),

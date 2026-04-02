@@ -16,7 +16,10 @@ import type { ToastPosition, ToastProps } from './types';
 
 const { width: WINDOW_WIDTH } = Dimensions.get('window');
 
-type ToastSwipeHandlerProps = Pick<ToastProps, 'important'> & {
+type ToastSwipeHandlerProps = Pick<
+  ToastProps,
+  'important' | 'index' | 'numberOfToasts'
+> & {
   onRemove: () => void;
   style?: ViewStyle | (ViewStyle | undefined)[];
   onBegin: () => void;
@@ -24,7 +27,7 @@ type ToastSwipeHandlerProps = Pick<ToastProps, 'important'> & {
   enabled?: boolean;
   unstyled?: boolean;
   position?: ToastPosition;
-  onPress: () => void;
+  onPress: (args: { x: number; y: number }) => void;
 };
 
 export const ToastSwipeHandler: React.FC<
@@ -40,6 +43,8 @@ export const ToastSwipeHandler: React.FC<
   important,
   position: positionProps,
   onPress,
+  index,
+  numberOfToasts,
 }) => {
   const translate = useSharedValue(0);
   const {
@@ -98,7 +103,6 @@ export const ToastSwipeHandler: React.FC<
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
-          return;
         }
 
         if (shouldDismiss) {
@@ -155,10 +159,10 @@ export const ToastSwipeHandler: React.FC<
       runOnJS(onFinalize)();
     });
 
-  const tap = Gesture.Tap().onEnd(() => {
+  const tap = Gesture.Tap().onEnd((event) => {
     'worklet';
     if (onPress) {
-      runOnJS(onPress)();
+      runOnJS(onPress)({ x: event.x, y: event.y });
     }
   });
 
@@ -199,7 +203,7 @@ export const ToastSwipeHandler: React.FC<
                 justifyContent: 'center',
                 marginBottom: gap,
               },
-          { width: '100%' },
+          { width: '100%', zIndex: -(numberOfToasts - index) },
           Platform.OS === 'android'
             ? {
                 opacity: 1,

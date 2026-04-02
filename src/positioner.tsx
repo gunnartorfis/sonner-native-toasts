@@ -1,54 +1,64 @@
 import React from 'react';
-import { View, type ViewStyle } from 'react-native';
-import type { ToasterProps } from './types';
+import { Platform, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToastContext } from './context';
+import {
+  calculateOutsidePressableArea,
+  getContainerStyle,
+  getInsetValues,
+} from './positioner-utils';
+import type { ToasterProps } from './types';
 
 export const Positioner: React.FC<
   React.PropsWithChildren<Pick<ToasterProps, 'position' | 'style'>>
 > = ({ children, position, style, ...props }) => {
-  const { offset } = useToastContext();
+  const { offset, isExpanded, collapse, toastHeights, gap, visibleToasts } =
+    useToastContext();
   const { top, bottom } = useSafeAreaInsets();
 
-  const getContainerStyle = (): ViewStyle => {
-    if (position === 'center') {
-      return {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-      };
-    }
+  const resolvedPosition = position || 'bottom-center';
+  const containerStyle = getContainerStyle(resolvedPosition);
 
-    return {
-      position: 'absolute',
-      width: '100%',
-      alignItems: 'center',
-    };
+  const insetValues = getInsetValues({
+    position: resolvedPosition,
+    offset,
+    safeAreaInsets: { top, bottom },
+  });
+
+  const handleOutsidePress = () => {
+    if (isExpanded) {
+      collapse();
+    }
   };
 
-  const getInsetValues = () => {
-    if (position === 'bottom-center') {
-      return { bottom: offset || bottom || 40 };
-    }
+  const outsidePressableStyle = calculateOutsidePressableArea({
+    position: resolvedPosition,
+    toastHeights,
+    gap,
+    visibleToasts: visibleToasts || 3,
+    insetValues,
+  });
 
-    if (position === 'top-center') {
-      return { top: offset || top || 40 };
-    }
+  // Don't show expand/collapse for center position
+  const shouldAllowCollapse = resolvedPosition !== 'center' && isExpanded;
 
-    return {};
-  };
+  const hasChildren = React.Children.count(children) > 0;
 
   return (
-    <View
-      style={[getContainerStyle(), getInsetValues(), style]}
-      pointerEvents="box-none"
-      {...props}
-    >
-      {children}
-    </View>
+    <>
+      {/* Outside pressable area - positioned outside the toast stack */}
+      {shouldAllowCollapse && (
+        <Pressable style={outsidePressableStyle} onPress={handleOutsidePress} />
+      )}
+      <View
+        style={[containerStyle, insetValues, style]}
+        pointerEvents={
+          Platform.OS === 'android' && !hasChildren ? 'none' : 'box-none'
+        }
+        {...props}
+      >
+        {children}
+      </View>
+    </>
   );
 };

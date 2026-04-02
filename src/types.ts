@@ -1,19 +1,24 @@
 import type React from 'react';
 import type { TextStyle, ViewProps, ViewStyle } from 'react-native';
+import type { SharedValue } from 'react-native-reanimated';
+
+export type ToastStyles = {
+  toastContainer?: ViewStyle;
+  toast?: ViewStyle;
+  toastContent?: ViewStyle;
+  textContainer?: ViewStyle;
+  title?: TextStyle;
+  description?: TextStyle;
+  buttons?: ViewStyle;
+  closeButton?: ViewStyle;
+  closeButtonIcon?: ViewStyle;
+};
 
 type StyleProps = {
   unstyled?: boolean;
   style?: ViewStyle;
-  styles?: {
-    toastContainer?: ViewStyle;
-    toast?: ViewStyle;
-    toastContent?: ViewStyle;
-    title?: TextStyle;
-    description?: TextStyle;
-    buttons?: ViewStyle;
-    closeButton?: ViewStyle;
-    closeButtonIcon?: ViewStyle;
-  };
+  styles?: ToastStyles;
+  backgroundComponent?: React.ReactNode;
 };
 
 type PromiseOptions<T = unknown> = {
@@ -21,6 +26,11 @@ type PromiseOptions<T = unknown> = {
   success: (result: T) => string;
   error: ((error: unknown) => string) | string;
   loading: string;
+  styles?: {
+    loading?: ToastStyles;
+    success?: ToastStyles;
+    error?: ToastStyles;
+  };
 };
 
 export type ToastPosition = 'top-center' | 'bottom-center' | 'center';
@@ -40,8 +50,10 @@ export type ToastAction = {
 
 export type ToastProps = StyleProps & {
   id: string | number;
+  index: number;
   title: string;
   variant: ToastVariant;
+  numberOfToasts: number;
   jsx?: React.ReactNode;
   description?: string;
   invert?: boolean;
@@ -77,7 +89,14 @@ export function isToastAction(
 
 type ExternalToast = Omit<
   ToastProps,
-  'id' | 'type' | 'title' | 'jsx' | 'promise' | 'variant'
+  | 'id'
+  | 'type'
+  | 'title'
+  | 'jsx'
+  | 'promise'
+  | 'variant'
+  | 'index'
+  | 'numberOfToasts'
 > & {
   id?: string | number;
 };
@@ -93,6 +112,7 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
   offset?: number;
   autoWiggleOnUpdate?: AutoWiggle;
   style?: ViewStyle;
+  positionerStyle?: ViewStyle;
   // dir?: 'ltr' | 'rtl'; (ltr)
   // hotkey?: string; // hotkeys not supported on mobile
   invert?: boolean;
@@ -110,6 +130,13 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
     buttonsStyle?: ViewStyle;
     closeButtonStyle?: ViewStyle;
     closeButtonIconStyle?: ViewStyle;
+    textContainerStyle?: ViewStyle;
+    backgroundComponent?: React.ReactNode;
+    success?: ViewStyle;
+    error?: ViewStyle;
+    warning?: ViewStyle;
+    info?: ViewStyle;
+    loading?: ViewStyle;
   };
   gap?: number;
   loadingIcon?: React.ReactNode;
@@ -124,6 +151,7 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
   };
   swipeToDismissDirection?: ToastSwipeDirection;
   pauseWhenPageIsHidden?: boolean;
+  enableStacking?: boolean;
   ToasterOverlayWrapper?: React.ComponentType<{ children: React.ReactNode }>;
   ToastWrapper?: React.ComponentType<
     ViewProps & {
@@ -154,9 +182,17 @@ export type ToasterContextType = Required<
     | 'autoWiggleOnUpdate'
     | 'richColors'
     | 'unstyled'
+    | 'enableStacking'
+    | 'visibleToasts'
   >
 > & {
   addToast: AddToastContextHandler;
+  newestToastHeightShared: SharedValue<number>;
+  toastHeights: Record<string | number, number>;
+  isExpanded: boolean;
+  expand: () => void;
+  collapse: () => void;
+  toggleExpand: () => void;
 };
 
 export declare const toast: ((

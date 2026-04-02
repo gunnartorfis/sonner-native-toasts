@@ -22,6 +22,9 @@ export const toastDefaultValues: {
   theme: ToastTheme;
   autoWiggleOnUpdate: AutoWiggle;
   richColors: boolean;
+  enableStacking: boolean;
+  stackScale: number;
+  stackGap: number;
 } = {
   duration: 4000,
   position: 'top-center',
@@ -38,4 +41,7 @@ export const toastDefaultValues: {
   theme: 'system',
   autoWiggleOnUpdate: 'never',
   richColors: false,
+  enableStacking: true,
+  stackScale: 0.95,
+  stackGap: 8,
 };

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Platform } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
+import { useSharedValue } from 'react-native-reanimated';
 import { toastDefaultValues } from './constants';
 import { ToastContext } from './context';
 import { Positioner } from './positioner';
@@ -62,7 +63,9 @@ export const ToasterUI: React.FC<ToasterProps> = ({
   theme,
   autoWiggleOnUpdate,
   richColors,
+  enableStacking = toastDefaultValues.enableStacking,
   ToastWrapper,
+  positionerStyle,
   ...props
 }) => {
   const storeState = React.useSyncExternalStore(
@@ -71,7 +74,10 @@ export const ToasterUI: React.FC<ToasterProps> = ({
     toastStore.getSnapshot
   );
 
-  const { toasts } = storeState;
+  const { toasts, toastHeights, isExpanded } = storeState;
+
+  // Shared value to track the newest toast's height for stacking
+  const newestToastHeightShared = useSharedValue(0);
 
   // Update store config when props change
   React.useEffect(() => {
@@ -109,10 +115,26 @@ export const ToasterUI: React.FC<ToasterProps> = ({
     autoWiggleOnUpdate:
       autoWiggleOnUpdate ?? toastDefaultValues.autoWiggleOnUpdate,
     richColors: richColors ?? toastDefaultValues.richColors,
+    enableStacking: enableStacking ?? toastDefaultValues.enableStacking,
+    visibleToasts: visibleToasts ?? toastDefaultValues.visibleToasts,
+    newestToastHeightShared,
+    toastHeights,
+    isExpanded,
+    expand: toastStore.expand,
+    collapse: toastStore.collapse,
+    toggleExpand: toastStore.toggleExpand,
   };
-  const orderToastsFromPosition: (
-    currentToasts: ToastProps[]
-  ) => ToastProps[] = (currentToasts) => {
+  const orderToastsFromPosition: (args: {
+    currentToasts: ToastProps[];
+    enableStacking: boolean;
+  }) => ToastProps[] = ({ currentToasts, enableStacking }) => {
+    if (enableStacking) {
+      // For top: reverse order so newest toast is rendered first (appears behind)
+      // For bottom: keep original order so newest toast is rendered last (appears in front)
+      return position === 'top-center'
+        ? currentToasts.slice().reverse()
+        : currentToasts;
+    }
     return position === 'bottom-center'
       ? currentToasts
       : currentToasts.slice().reverse();
@@ -138,27 +160,78 @@ export const ToasterUI: React.FC<ToasterProps> = ({
     );
   });
 
-  const orderedToasts = orderToastsFromPosition(toasts);
+  const orderedToasts = orderToastsFromPosition({
+    currentToasts: toasts,
+    enableStacking,
+  });
 
   return (
     <ToastContext.Provider value={value}>
       {possiblePositions.map((currentPosition, positionIndex) => (
-        <Positioner position={currentPosition} key={currentPosition}>
+        <Positioner
+          key={currentPosition}
+          style={positionerStyle}
+          position={currentPosition}
+        >
           {orderedToasts
             .filter(
               (possibleToast) =>
                 (!possibleToast.position && positionIndex === 0) ||
                 possibleToast.position === currentPosition
             )
-            .map((toastToRender) => {
+            .map((toastToRender, index) => {
               const ToastToRender = (
                 <Toast
+                  {...props}
                   {...toastToRender}
+                  style={{
+                    ...props.style,
+                    ...toastToRender.style,
+                  }}
+                  styles={{
+                    toastContainer: {
+                      ...props.styles?.toastContainer,
+                      ...toastToRender.styles?.toastContainer,
+                    },
+                    toast: {
+                      ...props.styles?.toast,
+                      ...toastToRender.styles?.toast,
+                    },
+                    toastContent: {
+                      ...props.styles?.toastContent,
+                      ...toastToRender.styles?.toastContent,
+                    },
+                    textContainer: {
+                      ...props.styles?.textContainer,
+                      ...toastToRender.styles?.textContainer,
+                    },
+                    title: {
+                      ...props.styles?.title,
+                      ...toastToRender.styles?.title,
+                    },
+                    description: {
+                      ...props.styles?.description,
+                      ...toastToRender.styles?.description,
+                    },
+                    buttons: {
+                      ...props.styles?.buttons,
+                      ...toastToRender.styles?.buttons,
+                    },
+                    closeButton: {
+                      ...props.styles?.closeButton,
+                      ...toastToRender.styles?.closeButton,
+                    },
+                    closeButtonIcon: {
+                      ...props.styles?.closeButtonIcon,
+                      ...toastToRender.styles?.closeButtonIcon,
+                    },
+                  }}
                   onDismiss={onDismiss}
                   onAutoClose={onAutoClose}
+                  index={index}
                   ref={toastStore.getToastRef(toastToRender.id)}
                   key={toastToRender.id}
-                  {...props}
+                  numberOfToasts={orderedToasts.length}
                 />
               );
 

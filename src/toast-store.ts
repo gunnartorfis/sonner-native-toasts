@@ -17,6 +17,8 @@ type ToastStoreState = {
   toastRefs: Record<string | number, React.RefObject<ToastRef>>;
   shouldShowOverlay: boolean;
   toastTimers: Record<string | number, ToastTimer>;
+  toastHeights: Record<string | number, number>;
+  isExpanded: boolean;
 };
 
 type Subscriber = () => void;
@@ -35,12 +37,15 @@ class ToastStore {
     toastRefs: {},
     shouldShowOverlay: false,
     toastTimers: {},
+    toastHeights: {},
+    isExpanded: false,
   };
 
   private subscribers = new Set<Subscriber>();
   private config: ToastStoreConfig = {};
   private hideOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
   private promiseResolvers = new Map<string | number, boolean>();
+  private lastCollapseTime = 0;
 
   subscribe = (callback: Subscriber) => {
     this.subscribers.add(callback);
@@ -183,7 +188,9 @@ class ToastStore {
   };
 
   addToast = (
-    options: Omit<ToastProps, 'id'> & { id?: string | number }
+    options: Omit<ToastProps, 'id' | 'numberOfToasts' | 'index'> & {
+      id?: string | number;
+    }
   ): string | number => {
     const hasValidId =
       typeof options?.id === 'number' ||
@@ -205,6 +212,8 @@ class ToastStore {
       id,
       variant: options.variant ?? toastDefaultValues.variant,
       duration,
+      numberOfToasts: this.state.toasts.length + 1,
+      index: this.state.toasts.length,
     };
 
     const existingToast = this.state.toasts.find(
@@ -326,6 +335,8 @@ class ToastStore {
         toasts: [],
         toastsCounter: 1,
         toastTimers: {},
+        toastHeights: {},
+        isExpanded: false,
       };
       this.scheduleHideOverlay();
       this.notify();
@@ -343,10 +354,25 @@ class ToastStore {
       (currentToast) => currentToast.id !== id
     );
 
+    // Clean up height for dismissed toast
+    const updatedHeights = { ...this.state.toastHeights };
+    delete updatedHeights[id];
+
+    // Auto-collapse if only one toast remains
+    const shouldAutoCollapse =
+      filteredToasts.length <= 1 && this.state.isExpanded;
+
     this.state = {
       ...this.state,
       toasts: filteredToasts,
+      toastHeights: updatedHeights,
+      isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
     };
+
+    // Resume timers if we auto-collapsed
+    if (shouldAutoCollapse) {
+      this.resumeAllTimers();
+    }
 
     if (origin === 'onDismiss') {
       toastForCallback?.onDismiss?.(id);
@@ -409,6 +435,62 @@ class ToastStore {
     id: string | number
   ): React.RefObject<ToastRef> | undefined => {
     return this.state.toastRefs[id];
+  };
+
+  setToastHeight = (id: string | number, height: number) => {
+    this.state = {
+      ...this.state,
+      toastHeights: {
+        ...this.state.toastHeights,
+        [id]: height,
+      },
+    };
+    this.notify();
+  };
+
+  getToastHeight = (id: string | number): number => {
+    return this.state.toastHeights[id] ?? 0;
+  };
+
+  getNewestToastHeight = (): number => {
+    const newestToast = this.state.toasts[this.state.toasts.length - 1];
+    return newestToast ? (this.state.toastHeights[newestToast.id] ?? 0) : 0;
+  };
+
+  expand = () => {
+    this.state = {
+      ...this.state,
+      isExpanded: true,
+    };
+    // Pause all timers when expanded
+    this.pauseAllTimers();
+    this.notify();
+  };
+
+  collapse = () => {
+    this.state = {
+      ...this.state,
+      isExpanded: false,
+    };
+    // Track when we collapsed to prevent immediate re-expansion
+    this.lastCollapseTime = Date.now();
+    // Resume all timers when collapsed
+    this.resumeAllTimers();
+    this.notify();
+  };
+
+  toggleExpand = () => {
+    // Prevent immediate re-expansion after a collapse (100ms cooldown)
+    const timeSinceCollapse = Date.now() - this.lastCollapseTime;
+    if (!this.state.isExpanded && timeSinceCollapse < 100) {
+      return;
+    }
+
+    if (this.state.isExpanded) {
+      this.collapse();
+    } else {
+      this.expand();
+    }
   };
 }
 
