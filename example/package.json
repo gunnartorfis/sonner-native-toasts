@@ -8,7 +8,7 @@
     "prebuild": "expo prebuild --clean",
     "run:ios": "expo run:ios",
     "ios": "expo run:ios",
-    "lint": "eslint \"**/*.{js,ts,tsx}\""
+    "lint": "expo lint"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
