@@ -22,7 +22,8 @@ type StyleProps = {
 
 type PromiseOptions = {
   promise: Promise<unknown>;
-  success: (result: any) => string; // TODO: type this with generics
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: type with generics
+  success: (result: any) => string;
   error: ((error: unknown) => string) | string;
   loading: string;
   styles?: {

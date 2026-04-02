@@ -78,5 +78,6 @@ android/generated
 
 example/ios
 example/android
+example/expo-env.d.ts
 
 docs/.envrc

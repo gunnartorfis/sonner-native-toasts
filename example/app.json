@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "sonnernativeexample",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gunnartorfis.sonnernativeexample"
@@ -17,7 +16,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.gunnartorfis.sonnernativeexample"
     },
     "web": {
