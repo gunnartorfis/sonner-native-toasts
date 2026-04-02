@@ -128,19 +128,19 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     }));
 
     // Handle app state changes - pause/resume timers
-    const onBackground = () => {
+    const onBackground = React.useCallback(() => {
       if (!pauseWhenPageIsHidden) {
         return;
       }
       toastStore.pauseTimer(id);
-    };
+    }, [pauseWhenPageIsHidden, id]);
 
-    const onForeground = () => {
+    const onForeground = React.useCallback(() => {
       if (!pauseWhenPageIsHidden) {
         return;
       }
       toastStore.resumeTimer(id);
-    };
+    }, [pauseWhenPageIsHidden, id]);
 
     useAppStateListener({
       onBackground,
@@ -310,7 +310,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                 closeButton={closeButton}
                 onDismiss={onDismiss}
                 id={id}
-                styles={styles}
                 closeButtonStyle={[closeButtonStyleCtx, styles?.closeButton]}
                 closeButtonIconStyle={[
                   closeButtonIconStyleCtx,
@@ -371,7 +370,6 @@ const CloseButton: React.FC<{
   closeButton: ToastProps['closeButton'];
   onDismiss: ToastProps['onDismiss'];
   id: ToastProps['id'];
-  styles: ToastProps['styles'];
   closeButtonStyle?: ViewProps['style'];
   closeButtonIconStyle?: ViewProps['style'];
   defaultStyles: DefaultStyles;

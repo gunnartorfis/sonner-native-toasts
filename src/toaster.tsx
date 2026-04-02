@@ -73,15 +73,13 @@ export const ToasterUI: React.FC<ToasterProps> = ({
 
   const { toasts } = storeState;
 
-  // Update store config when props change
-  React.useEffect(() => {
-    toastStore.setConfig({
-      autoWiggleOnUpdate,
-      visibleToasts,
-      duration,
-      pauseWhenPageIsHidden,
-    });
-  }, [autoWiggleOnUpdate, visibleToasts, duration, pauseWhenPageIsHidden]);
+  // Sync store config on every render so it's available immediately
+  toastStore.setConfig({
+    autoWiggleOnUpdate,
+    visibleToasts,
+    duration,
+    pauseWhenPageIsHidden,
+  });
 
   const dismissToast: (
     id: string | number | undefined,
@@ -155,6 +153,44 @@ export const ToasterUI: React.FC<ToasterProps> = ({
                 <Toast
                   {...props}
                   {...toastToRender}
+                  style={{
+                    ...props.style,
+                    ...toastToRender.style,
+                  }}
+                  styles={{
+                    toastContainer: {
+                      ...props.styles?.toastContainer,
+                      ...toastToRender.styles?.toastContainer,
+                    },
+                    toast: {
+                      ...props.styles?.toast,
+                      ...toastToRender.styles?.toast,
+                    },
+                    toastContent: {
+                      ...props.styles?.toastContent,
+                      ...toastToRender.styles?.toastContent,
+                    },
+                    title: {
+                      ...props.styles?.title,
+                      ...toastToRender.styles?.title,
+                    },
+                    description: {
+                      ...props.styles?.description,
+                      ...toastToRender.styles?.description,
+                    },
+                    buttons: {
+                      ...props.styles?.buttons,
+                      ...toastToRender.styles?.buttons,
+                    },
+                    closeButton: {
+                      ...props.styles?.closeButton,
+                      ...toastToRender.styles?.closeButton,
+                    },
+                    closeButtonIcon: {
+                      ...props.styles?.closeButtonIcon,
+                      ...toastToRender.styles?.closeButtonIcon,
+                    },
+                  }}
                   onDismiss={onDismiss}
                   onAutoClose={onAutoClose}
                   ref={toastStore.getToastRef(toastToRender.id)}
