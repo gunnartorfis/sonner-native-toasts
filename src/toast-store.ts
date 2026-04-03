@@ -188,7 +188,10 @@ class ToastStore {
   };
 
   addToast = (
-    options: Omit<ToastProps, 'id' | 'numberOfToasts' | 'index'> & {
+    options: Omit<
+      ToastProps,
+      'id' | 'numberOfToasts' | 'index' | 'orderedToastIds'
+    > & {
       id?: string | number;
     }
   ): string | number => {
@@ -212,8 +215,10 @@ class ToastStore {
       id,
       variant: options.variant ?? toastDefaultValues.variant,
       duration,
-      numberOfToasts: this.state.toasts.length + 1,
-      index: this.state.toasts.length,
+      // These are set by toaster.tsx at render time; defaults here for type satisfaction
+      numberOfToasts: 0,
+      index: 0,
+      orderedToastIds: [],
     };
 
     const existingToast = this.state.toasts.find(

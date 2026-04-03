@@ -4,6 +4,7 @@ import { FullWindowOverlay } from 'react-native-screens';
 import { useSharedValue } from 'react-native-reanimated';
 import { toastDefaultValues } from './constants';
 import { ToastContext } from './context';
+import { getOrderedToastIds } from './position-utils';
 import { Positioner } from './positioner';
 import { Toast } from './toast';
 import {
@@ -169,18 +170,24 @@ const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
 
   return (
     <ToastContext.Provider value={value}>
-      {possiblePositions.map((currentPosition, positionIndex) => (
+      {possiblePositions.map((currentPosition, positionIndex) => {
+        const toastsForPosition = orderedToasts.filter(
+          (possibleToast) =>
+            (!possibleToast.position && positionIndex === 0) ||
+            possibleToast.position === currentPosition
+        );
+        const orderedToastIds = getOrderedToastIds(
+          toastsForPosition,
+          currentPosition,
+          enableStacking
+        );
+        return (
         <Positioner
           key={currentPosition}
           style={positionerStyle}
           position={currentPosition}
         >
-          {orderedToasts
-            .filter(
-              (possibleToast) =>
-                (!possibleToast.position && positionIndex === 0) ||
-                possibleToast.position === currentPosition
-            )
+          {toastsForPosition
             .map((toastToRender, index) => {
               const ToastToRender = (
                 <Toast
@@ -233,7 +240,8 @@ const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
                   index={index}
                   ref={toastStore.getToastRef(toastToRender.id)}
                   key={toastToRender.id}
-                  numberOfToasts={orderedToasts.length}
+                  numberOfToasts={toastsForPosition.length}
+                  orderedToastIds={orderedToastIds}
                 />
               );
 
@@ -250,7 +258,8 @@ const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
               return ToastToRender;
             })}
         </Positioner>
-      ))}
+        );
+      })}
     </ToastContext.Provider>
   );
 };

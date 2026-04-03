@@ -19,7 +19,6 @@ import { useToastContext } from './context';
 import { easeOutQuartFn } from './easings';
 import { ToastSwipeHandler } from './gestures';
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from './icons';
-import { getOrderedToastIds } from './position-utils';
 import { isPressNearCloseButton } from './press-utils';
 import { toastStore } from './toast-store';
 import { isToastAction, type ToastProps, type ToastRef } from './types';
@@ -59,6 +58,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       backgroundComponent: backgroundComponentProps,
       numberOfToasts,
       index,
+      orderedToastIds,
     },
     ref
   ) => {
@@ -119,20 +119,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       numberOfToasts
     );
 
-    // Get all toasts to build ordered IDs for position calculation
-    const allToasts = React.useSyncExternalStore(
-      toastStore.subscribe,
-      toastStore.getSnapshot,
-      toastStore.getSnapshot
-    ).toasts;
-
-    // Build ordered toast IDs based on position for correct stacking
     const toastPosition = position ?? positionCtx;
-    const orderedToastIds = getOrderedToastIds(
-      allToasts,
-      toastPosition,
-      enableStacking
-    );
 
     // Calculate absolute position for this toast
     const stackGap = toastDefaultValues.stackGap;
@@ -150,17 +137,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     });
 
     const isDragging = React.useRef(false);
-    // Type the ref to include getBoundingClientRect from New Architecture
-    const toastRef = React.useRef<
-      View & {
-        getBoundingClientRect?: () => {
-          x: number;
-          y: number;
-          width: number;
-          height: number;
-        };
-      }
-    >(null);
+    const toastRef = React.useRef<View>(null);
 
     const wiggleSharedValue = useSharedValue(1);
 
@@ -264,20 +241,19 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       onForeground,
     });
 
-    // Measure toast height synchronously and report to store
-    React.useLayoutEffect(() => {
-      if (!enableStacking || !toastRef.current) {
-        return;
-      }
-
-      toastRef.current.measureInWindow?.((_, __, ___, height) => {
+    const handleToastLayout = React.useCallback(
+      (event: { nativeEvent: { layout: { height: number } } }) => {
+        if (!enableStacking) {
+          return;
+        }
+        const { height } = event.nativeEvent.layout;
         toastStore.setToastHeight(id, height);
-        // If this is the newest toast, update the shared value
         if (index === numberOfToasts - 1) {
           newestToastHeightShared.value = height;
         }
-      });
-    }, [enableStacking, id, index, numberOfToasts, newestToastHeightShared]);
+      },
+      [enableStacking, id, index, numberOfToasts, newestToastHeightShared]
+    );
 
     const defaultStyles = useDefaultStyles({
       invert,
@@ -344,6 +320,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
           <Animated.View style={absolutePositionStyle}>
             <Animated.View
               ref={toastRef}
+              onLayout={handleToastLayout}
               style={horizontalStackingStyle}
               entering={entering}
               exiting={exiting}
@@ -378,6 +355,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
           >
             <Animated.View
               ref={toastRef}
+              onLayout={handleToastLayout}
               style={[
                 unstyled ? undefined : elevationStyle,
                 defaultStyles.toast,

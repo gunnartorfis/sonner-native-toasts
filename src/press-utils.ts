@@ -1,22 +1,13 @@
 import { Dimensions } from 'react-native';
 
-// Define the close button area (right edge of screen)
-const CLOSE_BUTTON_AREA = 60; // pixels from right edge
+// Width of the close button hit area from the right edge
+const CLOSE_BUTTON_AREA = 60;
 
 /**
- * Checks if a press event occurred near the close button area
- * @param x - The x coordinate of the press
- * @returns true if the press is near the close button area
+ * Checks if a press event occurred near the close button area.
+ * The x coordinate is relative to the gesture handler view which is full screen width.
  */
 export const isPressNearCloseButton = ({ x }: { x: number }): boolean => {
-  const screenWidth = Dimensions.get('window').width;
-  return x > screenWidth - CLOSE_BUTTON_AREA;
-};
-
-/**
- * Gets the close button area width
- * @returns The width of the close button area in pixels
- */
-export const getCloseButtonAreaWidth = (): number => {
-  return CLOSE_BUTTON_AREA;
+  const { width } = Dimensions.get('window');
+  return x > width - CLOSE_BUTTON_AREA;
 };

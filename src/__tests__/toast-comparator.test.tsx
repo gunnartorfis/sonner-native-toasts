@@ -4,7 +4,7 @@ import { areToastsEqual } from '../toast-comparator';
 
 // Mock helper function to simulate a click handler
 const mockClickHandler = () => {};
-const base = { index: 0, numberOfToasts: 1 } as const;
+const base = { index: 0, numberOfToasts: 1, orderedToastIds: [] as (string | number)[] };
 
 describe('areToastsEqual', () => {
   it('should return true when all important properties are equal', () => {

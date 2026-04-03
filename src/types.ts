@@ -54,6 +54,7 @@ export type ToastProps = StyleProps & {
   title: string;
   variant: ToastVariant;
   numberOfToasts: number;
+  orderedToastIds: Array<string | number>;
   jsx?: React.ReactNode;
   description?: string;
   invert?: boolean;
@@ -97,6 +98,7 @@ type ExternalToast = Omit<
   | 'variant'
   | 'index'
   | 'numberOfToasts'
+  | 'orderedToastIds'
 > & {
   id?: string | number;
 };
@@ -162,7 +164,7 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
 };
 
 export type AddToastContextHandler = (
-  data: Omit<ToastProps, 'id'> & { id?: string | number }
+  data: Omit<ToastProps, 'id' | 'index' | 'numberOfToasts' | 'orderedToastIds'> & { id?: string | number }
 ) => string | number;
 
 export type ToasterContextType = Required<

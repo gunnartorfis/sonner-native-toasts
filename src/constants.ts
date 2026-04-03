@@ -23,7 +23,6 @@ export const toastDefaultValues: {
   autoWiggleOnUpdate: AutoWiggle;
   richColors: boolean;
   enableStacking: boolean;
-  stackScale: number;
   stackGap: number;
 } = {
   duration: 4000,
@@ -42,6 +41,5 @@ export const toastDefaultValues: {
   autoWiggleOnUpdate: 'never',
   richColors: false,
   enableStacking: true,
-  stackScale: 0.95,
   stackGap: 8,
 };
