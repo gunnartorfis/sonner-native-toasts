@@ -7,10 +7,8 @@ export const getOrderedToastIds = (
   enableStacking: boolean
 ): Array<string | number> => {
   if (enableStacking) {
-    // Match the rendering order from toaster.tsx
-    return position === 'top-center'
-      ? toasts.map((t) => t.id).reverse()
-      : toasts.map((t) => t.id);
+    // toasts are already in rendering order (reversed by orderToastsFromPosition for top-center)
+    return toasts.map((t) => t.id);
   }
   return position === 'bottom-center'
     ? toasts.map((t) => t.id)
