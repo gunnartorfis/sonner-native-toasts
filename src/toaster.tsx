@@ -25,14 +25,16 @@ export const Toaster: React.FC<ToasterProps> = ({
     toastStore.getSnapshot
   );
 
-  if (!storeState.shouldShowOverlay) {
-    return <ToasterUI {...toasterProps} />;
+  const { toasts, shouldShowOverlay } = storeState;
+
+  if (!shouldShowOverlay) {
+    return <ToasterUI {...toasterProps} toasts={toasts} />;
   }
 
   if (ToasterOverlayWrapper) {
     return (
       <ToasterOverlayWrapper>
-        <ToasterUI {...toasterProps} />
+        <ToasterUI {...toasterProps} toasts={toasts} />
       </ToasterOverlayWrapper>
     );
   }
@@ -40,15 +42,16 @@ export const Toaster: React.FC<ToasterProps> = ({
   if (Platform.OS === 'ios') {
     return (
       <FullWindowOverlay>
-        <ToasterUI {...toasterProps} />
+        <ToasterUI {...toasterProps} toasts={toasts} />
       </FullWindowOverlay>
     );
   }
 
-  return <ToasterUI {...toasterProps} />;
+  return <ToasterUI {...toasterProps} toasts={toasts} />;
 };
 
-export const ToasterUI: React.FC<ToasterProps> = ({
+const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
+  toasts,
   duration = toastDefaultValues.duration,
   position = toastDefaultValues.position,
   offset = toastDefaultValues.offset,
@@ -68,26 +71,25 @@ export const ToasterUI: React.FC<ToasterProps> = ({
   positionerStyle,
   ...props
 }) => {
+
   const storeState = React.useSyncExternalStore(
     toastStore.subscribe,
     toastStore.getSnapshot,
     toastStore.getSnapshot
   );
 
-  const { toasts, toastHeights, isExpanded } = storeState;
+  const { toastHeights, isExpanded } = storeState;
 
   // Shared value to track the newest toast's height for stacking
   const newestToastHeightShared = useSharedValue(0);
 
-  // Update store config when props change
-  React.useEffect(() => {
-    toastStore.setConfig({
-      autoWiggleOnUpdate,
-      visibleToasts,
-      duration,
-      pauseWhenPageIsHidden,
-    });
-  }, [autoWiggleOnUpdate, visibleToasts, duration, pauseWhenPageIsHidden]);
+  // Sync store config on every render so it's available immediately
+  toastStore.setConfig({
+    autoWiggleOnUpdate,
+    visibleToasts,
+    duration,
+    pauseWhenPageIsHidden,
+  });
 
   const dismissToast: (
     id: string | number | undefined,

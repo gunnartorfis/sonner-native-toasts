@@ -14,7 +14,7 @@ type ToastTimer = {
 type ToastStoreState = {
   toasts: ToastProps[];
   toastsCounter: number;
-  toastRefs: Record<string | number, React.RefObject<ToastRef>>;
+  toastRefs: Record<string | number, React.RefObject<ToastRef | null>>;
   shouldShowOverlay: boolean;
   toastTimers: Record<string | number, ToastTimer>;
   toastHeights: Record<string | number, number>;
@@ -433,7 +433,7 @@ class ToastStore {
 
   getToastRef = (
     id: string | number
-  ): React.RefObject<ToastRef> | undefined => {
+  ): React.RefObject<ToastRef | null> | undefined => {
     return this.state.toastRefs[id];
   };
 
