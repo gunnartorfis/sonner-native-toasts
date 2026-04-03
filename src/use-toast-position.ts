@@ -50,7 +50,6 @@ export const useToastPosition = ({
       duration: STACKING_ANIMATION_DURATION,
       easing: easeOutQuartFn,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     id,
     index,
