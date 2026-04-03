@@ -33,21 +33,16 @@ export const getInsetValues = ({
   offset?: number;
   safeAreaInsets?: { top: number; bottom: number };
 }): { top?: number; bottom?: number } => {
-  const spacingForSafeArea = 20;
   const { top = 0, bottom = 0 } = safeAreaInsets || {};
 
   if (position === 'bottom-center') {
-    const safeAreaSpacing = offset || bottom || 0;
-    return {
-      bottom: safeAreaSpacing === 0 ? 40 : safeAreaSpacing + spacingForSafeArea,
-    };
+    if (offset) return { bottom: offset };
+    return { bottom: bottom > 0 ? bottom + 8 : 16 };
   }
 
   if (position === 'top-center') {
-    const safeAreaSpacing = offset || top || 0;
-    return {
-      top: safeAreaSpacing === 0 ? 40 : safeAreaSpacing + spacingForSafeArea,
-    };
+    if (offset) return { top: offset };
+    return { top: top > 0 ? top + 8 : 16 };
   }
 
   return {};

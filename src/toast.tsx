@@ -150,6 +150,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     const absolutePositionStyle = useAnimatedStyle(() => {
       return {
         position: 'absolute',
+        top: 0,
         width: '100%',
         transform: [{ translateY: yPosition.value }],
       };
