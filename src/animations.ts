@@ -5,7 +5,8 @@ import { useToastContext } from './context';
 import { easeInOutCubic, easeOutQuartFn } from './easings';
 import type { ToastPosition } from './types';
 
-export const ANIMATION_DURATION = 600;
+export const ENTERING_ANIMATION_DURATION = 300;
+export const STACKING_ANIMATION_DURATION = 600;
 
 export const useToastLayoutAnimations = (
   positionProp: ToastPosition | undefined,
@@ -41,13 +42,13 @@ export const getToastEntering = ({ position }: GetToastAnimationParams) => {
   const animations = {
     opacity: withTiming(1, {
       easing: easeOutQuartFn,
-      duration: ANIMATION_DURATION,
+      duration: ENTERING_ANIMATION_DURATION,
     }),
     transform: [
       {
         translateY: withTiming(0, {
           easing: easeOutQuartFn,
-          duration: ANIMATION_DURATION,
+          duration: ENTERING_ANIMATION_DURATION,
         }),
       },
     ],
@@ -83,7 +84,7 @@ export const getToastExiting = ({
     const animations = {
       opacity: withTiming(0, {
         easing: easeInOutCubic,
-        duration: ANIMATION_DURATION,
+        duration: ENTERING_ANIMATION_DURATION,
       }),
     };
 

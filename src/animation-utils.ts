@@ -30,28 +30,23 @@ export const getExitingTranslateY = ({
     return 0;
   }
 
-  // Determine slide distance based on number of visible toasts
-  const getSlideDistance = () => {
-    // If only 1 toast, slide fully
-    if (numberOfToasts === 1) {
-      if (position === 'top-center') {
-        return -150;
-      }
-      if (position === 'bottom-center') {
-        return 150;
-      }
-      return 50;
-    }
-
-    // If more than 1 toast, only slide by stackGap
+  // If only 1 toast, slide fully
+  if (numberOfToasts === 1) {
     if (position === 'top-center') {
-      return -stackGap;
+      return -150;
     }
     if (position === 'bottom-center') {
-      return stackGap;
+      return 150;
     }
-    return stackGap;
-  };
+    return 50;
+  }
 
-  return getSlideDistance();
+  // If more than 1 toast, only slide by stackGap
+  if (position === 'top-center') {
+    return -stackGap;
+  }
+  if (position === 'bottom-center') {
+    return stackGap;
+  }
+  return stackGap;
 };

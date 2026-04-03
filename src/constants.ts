@@ -6,6 +6,8 @@ import type {
   ToastVariant,
 } from './types';
 
+export const ESTIMATED_TOAST_HEIGHT = 70;
+
 export const toastDefaultValues: {
   duration: number;
   position: ToastPosition;

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ANIMATION_DURATION } from './animations';
+import { ENTERING_ANIMATION_DURATION } from './animations';
 import { toastDefaultValues } from './constants';
 import { areToastsEqual } from './toast-comparator';
 import type { ToastProps, ToastRef } from './types';
@@ -86,7 +86,7 @@ class ToastStore {
     const timeout = setTimeout(() => {
       onComplete();
       delete this.state.toastTimers[id];
-    }, ANIMATION_DURATION + duration);
+    }, ENTERING_ANIMATION_DURATION + duration);
 
     this.state.toastTimers[id] = {
       timeout,
@@ -407,7 +407,7 @@ class ToastStore {
       };
       this.hideOverlayTimeout = null;
       this.notify();
-    }, ANIMATION_DURATION);
+    }, ENTERING_ANIMATION_DURATION);
   };
 
   wiggleToast = (id: string | number) => {

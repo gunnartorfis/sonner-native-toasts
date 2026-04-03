@@ -13,7 +13,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { ANIMATION_DURATION, useToastLayoutAnimations } from './animations';
+import { STACKING_ANIMATION_DURATION, useToastLayoutAnimations } from './animations';
 import { toastDefaultValues } from './constants';
 import { useToastContext } from './context';
 import { easeOutQuartFn } from './easings';
@@ -70,12 +70,12 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       invert: invertCtx,
       richColors: richColorsCtx,
       enableStacking,
-      newestToastHeightShared,
       toastHeights,
       gap,
       position: positionCtx,
       isExpanded,
       toggleExpand,
+      visibleToasts: visibleToastsCtx,
       toastOptions: {
         unstyled: unstyledCtx,
         toastContainerStyle: toastContainerStyleCtx,
@@ -99,7 +99,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         loading: loadingStyleCtx,
       },
     } = useToastContext();
-    const { visibleToasts: visibleToastsCtx } = useToastContext();
     const invert = invertProps ?? invertCtx;
     const richColors = richColorsProps ?? richColorsCtx;
     const unstyled = unstyledProps ?? unstyledCtx;
@@ -162,7 +161,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       // When expanded, remove horizontal margin
       if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
         return withTiming(0, {
-          duration: ANIMATION_DURATION,
+          duration: STACKING_ANIMATION_DURATION,
           easing: easeOutQuartFn,
         });
       }
@@ -174,7 +173,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
           : numberOfToasts - index - 1; // Bottom: newest (highest index) has 0 margin
 
       return withTiming(stackGap * multiplier, {
-        duration: ANIMATION_DURATION,
+        duration: STACKING_ANIMATION_DURATION,
         easing: easeOutQuartFn,
       });
     }, [
@@ -249,10 +248,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       }
       const { height } = toastRef.current.getBoundingClientRect();
       toastStore.setToastHeight(id, height);
-      if (index === numberOfToasts - 1) {
-        newestToastHeightShared.value = height;
-      }
-    }, [enableStacking, id, index, numberOfToasts, newestToastHeightShared]);
+    }, [enableStacking, id, index, numberOfToasts]);
 
     const defaultStyles = useDefaultStyles({
       invert,

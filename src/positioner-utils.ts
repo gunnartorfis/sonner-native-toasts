@@ -1,4 +1,5 @@
 import type { ViewStyle } from 'react-native';
+import { ESTIMATED_TOAST_HEIGHT } from './constants';
 import type { ToastPosition } from './types';
 
 export const getContainerStyle = (position: ToastPosition): ViewStyle => {
@@ -65,10 +66,8 @@ export const calculateOutsidePressableArea = ({
   visibleToasts: number;
   insetValues: { top?: number; bottom?: number };
 }): ViewStyle => {
-  // Calculate the approximate height of the toast stack
-  const ESTIMATED_TOAST_HEIGHT = 70; // Fallback height
   const toastHeightValues = Object.values(toastHeights);
-  const numberOfToastsTocalculate = Math.min(
+  const numberOfToastsToCalculate = Math.min(
     toastHeightValues.length,
     visibleToasts || 3
   );
@@ -77,11 +76,11 @@ export const calculateOutsidePressableArea = ({
   const totalToastHeight =
     toastHeightValues.length > 0
       ? toastHeightValues
-          .slice(0, numberOfToastsTocalculate)
+          .slice(0, numberOfToastsToCalculate)
           .reduce((sum, height) => sum + height, 0)
-      : ESTIMATED_TOAST_HEIGHT * numberOfToastsTocalculate;
+      : ESTIMATED_TOAST_HEIGHT * numberOfToastsToCalculate;
 
-  const gapHeight = gap * Math.max(0, numberOfToastsTocalculate - 1);
+  const gapHeight = gap * Math.max(0, numberOfToastsToCalculate - 1);
   const stackHeight = totalToastHeight + gapHeight + 20; // Add some padding
 
   // Position the pressable area outside the toast stack

@@ -1,7 +1,5 @@
+import { ESTIMATED_TOAST_HEIGHT } from './constants';
 import type { ToastPosition, ToastProps } from './types';
-
-// Default estimated height for toasts before measurement
-const ESTIMATED_TOAST_HEIGHT = 70;
 
 export const getOrderedToastIds = (
   toasts: ToastProps[],

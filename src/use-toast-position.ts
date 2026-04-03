@@ -1,5 +1,5 @@
 import { useDerivedValue, withTiming } from 'react-native-reanimated';
-import { ANIMATION_DURATION } from './animations';
+import { STACKING_ANIMATION_DURATION } from './animations';
 import { easeOutQuartFn } from './easings';
 import { calculateToastPosition } from './position-utils';
 import type { ToastPosition } from './types';
@@ -43,7 +43,7 @@ export const useToastPosition = ({
     });
 
     return withTiming(calculatedPosition, {
-      duration: ANIMATION_DURATION,
+      duration: STACKING_ANIMATION_DURATION,
       easing: easeOutQuartFn,
     });
   }, [
