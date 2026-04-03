@@ -1,36 +1,26 @@
 import type React from 'react';
 import type { TextStyle, ViewProps, ViewStyle } from 'react-native';
 
-export type ToastStyles = {
-  toastContainer?: ViewStyle;
-  toast?: ViewStyle;
-  toastContent?: ViewStyle;
-  textContainer?: ViewStyle;
-  title?: TextStyle;
-  description?: TextStyle;
-  buttons?: ViewStyle;
-  closeButton?: ViewStyle;
-  closeButtonIcon?: ViewStyle;
-};
-
 type StyleProps = {
   unstyled?: boolean;
   style?: ViewStyle;
-  styles?: ToastStyles;
-  backgroundComponent?: React.ReactNode;
+  styles?: {
+    toastContainer?: ViewStyle;
+    toast?: ViewStyle;
+    toastContent?: ViewStyle;
+    title?: TextStyle;
+    description?: TextStyle;
+    buttons?: ViewStyle;
+    closeButton?: ViewStyle;
+    closeButtonIcon?: ViewStyle;
+  };
 };
 
-type PromiseOptions = {
-  promise: Promise<unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: type with generics
-  success: (result: any) => string;
+type PromiseOptions<T = unknown> = {
+  promise: Promise<T>;
+  success: (result: T) => string;
   error: ((error: unknown) => string) | string;
   loading: string;
-  styles?: {
-    loading?: ToastStyles;
-    success?: ToastStyles;
-    error?: ToastStyles;
-  };
 };
 
 export type ToastPosition = 'top-center' | 'bottom-center' | 'center';
@@ -67,7 +57,7 @@ export type ToastProps = StyleProps & {
   richColors?: boolean;
   onDismiss?: (id: string | number) => void;
   onAutoClose?: (id: string | number) => void;
-  promiseOptions?: PromiseOptions;
+  promiseOptions?: PromiseOptions<unknown>;
   actionButtonStyle?: ViewStyle;
   actionButtonTextStyle?: TextStyle;
   cancelButtonStyle?: ViewStyle;
@@ -103,7 +93,6 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
   offset?: number;
   autoWiggleOnUpdate?: AutoWiggle;
   style?: ViewStyle;
-  positionerStyle?: ViewStyle;
   // dir?: 'ltr' | 'rtl'; (ltr)
   // hotkey?: string; // hotkeys not supported on mobile
   invert?: boolean;
@@ -121,13 +110,6 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
     buttonsStyle?: ViewStyle;
     closeButtonStyle?: ViewStyle;
     closeButtonIconStyle?: ViewStyle;
-    textContainerStyle?: ViewStyle;
-    backgroundComponent?: React.ReactNode;
-    success?: ViewStyle;
-    error?: ViewStyle;
-    warning?: ViewStyle;
-    info?: ViewStyle;
-    loading?: ViewStyle;
   };
   gap?: number;
   loadingIcon?: React.ReactNode;
@@ -171,6 +153,7 @@ export type ToasterContextType = Required<
     | 'toastOptions'
     | 'autoWiggleOnUpdate'
     | 'richColors'
+    | 'unstyled'
   >
 > & {
   addToast: AddToastContextHandler;
@@ -187,7 +170,7 @@ export declare const toast: ((
   custom: (jsx: React.ReactElement, data?: ExternalToast) => string | number;
   promise: <T>(
     promise: Promise<T>,
-    options: Omit<PromiseOptions, 'promise'>
+    options: Omit<PromiseOptions<T>, 'promise'> & ExternalToast
   ) => string | number;
   loading: (message: string, data?: ExternalToast) => string | number;
   dismiss: (id?: string | number) => string | number | undefined;

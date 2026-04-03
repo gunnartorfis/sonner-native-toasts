@@ -1,19 +1,26 @@
 import * as React from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  View,
+  type ViewProps,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { ANIMATION_DURATION, useToastLayoutAnimations } from './animations';
+import { useToastLayoutAnimations } from './animations';
 import { toastDefaultValues } from './constants';
 import { useToastContext } from './context';
 import { ToastSwipeHandler } from './gestures';
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from './icons';
+import { toastStore } from './toast-store';
 import { isToastAction, type ToastProps, type ToastRef } from './types';
 import { useAppStateListener } from './use-app-state';
-import { useDefaultStyles } from './use-default-styles';
+import { useDefaultStyles, type DefaultStyles } from './use-default-styles';
 
 export const Toast = React.forwardRef<ToastRef, ToastProps>(
   (
@@ -29,7 +36,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       cancel,
       close,
       onDismiss,
-      onAutoClose,
       dismissible = toastDefaultValues.dismissible,
       closeButton: closeButtonProps,
       actionButtonStyle,
@@ -45,13 +51,11 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       invert: invertProps,
       richColors: richColorsProps,
       onPress,
-      backgroundComponent: backgroundComponentProps,
     },
     ref
   ) => {
     const {
       duration: durationCtx,
-      addToast,
       closeButton: closeButtonCtx,
       icons,
       pauseWhenPageIsHidden,
@@ -66,18 +70,11 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         cancelButtonTextStyle: cancelButtonTextStyleCtx,
         style: toastStyleCtx,
         toastContentStyle: toastContentStyleCtx,
-        textContainerStyle: textContainerStyleCtx,
         titleStyle: titleStyleCtx,
         descriptionStyle: descriptionStyleCtx,
         buttonsStyle: buttonsStyleCtx,
         closeButtonStyle: closeButtonStyleCtx,
         closeButtonIconStyle: closeButtonIconStyleCtx,
-        backgroundComponent: backgroundComponentCtx,
-        success: successStyleCtx,
-        error: errorStyleCtx,
-        warning: warningStyleCtx,
-        info: infoStyleCtx,
-        loading: loadingStyleCtx,
       },
     } = useToastContext();
     const invert = invertProps ?? invertCtx;
@@ -85,18 +82,10 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     const unstyled = unstyledProps ?? unstyledCtx;
     const duration = durationProps ?? durationCtx;
     const closeButton = closeButtonProps ?? closeButtonCtx;
-    const backgroundComponent =
-      backgroundComponentProps ?? backgroundComponentCtx;
 
     const { entering, exiting } = useToastLayoutAnimations(position);
 
     const isDragging = React.useRef(false);
-    const timer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
-    const timerStart = React.useRef<number | undefined>(undefined);
-    const timeLeftOnceBackgrounded = React.useRef<number | undefined>(
-      undefined
-    );
-    const isResolvingPromise = React.useRef(false);
 
     const wiggleSharedValue = useSharedValue(1);
 
@@ -106,18 +95,10 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       };
     }, [wiggleSharedValue]);
 
-    const startTimer = React.useCallback(() => {
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => {
-        if (!isDragging.current) {
-          onAutoClose?.(id);
-        }
-      }, ANIMATION_DURATION + duration);
-    }, [duration, id, onAutoClose]);
-
-    const wiggle = React.useCallback(() => {
+    const wiggle = () => {
       'worklet';
 
+      // eslint-disable-next-line react-hooks/immutability
       wiggleSharedValue.value = withRepeat(
         withTiming(Math.min(wiggleSharedValue.value * 1.035, 1.035), {
           duration: 150,
@@ -125,142 +106,48 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         4,
         true
       );
-    }, [wiggleSharedValue]);
+    };
 
-    const wiggleHandler = React.useCallback(() => {
+    const wiggleHandler = () => {
       // we can't send Infinity over to the native layer.
       if (duration === Infinity) {
         return;
       }
 
-      // reset the duration
-      timerStart.current = Date.now();
-      startTimer();
-
       if (wiggleSharedValue.value !== 1) {
         // we should animate back to 1 and then wiggle
+        // eslint-disable-next-line react-hooks/immutability
         wiggleSharedValue.value = withTiming(1, { duration: 150 }, wiggle);
       } else {
         wiggle();
       }
-    }, [wiggle, wiggleSharedValue, startTimer, duration]);
+    };
 
     React.useImperativeHandle(ref, () => ({
       wiggle: wiggleHandler,
     }));
 
+    // Handle app state changes - pause/resume timers
     const onBackground = React.useCallback(() => {
       if (!pauseWhenPageIsHidden) {
         return;
       }
-
-      if (timer.current) {
-        timeLeftOnceBackgrounded.current =
-          duration - (Date.now() - timerStart.current!);
-        clearTimeout(timer.current);
-        timer.current = undefined;
-        timerStart.current = undefined;
-      }
-    }, [duration, pauseWhenPageIsHidden]);
+      toastStore.pauseTimer(id);
+    }, [pauseWhenPageIsHidden, id]);
 
     const onForeground = React.useCallback(() => {
       if (!pauseWhenPageIsHidden) {
         return;
       }
+      toastStore.resumeTimer(id);
+    }, [pauseWhenPageIsHidden, id]);
 
-      if (
-        timeLeftOnceBackgrounded.current &&
-        timeLeftOnceBackgrounded.current > 0
-      ) {
-        timer.current = setTimeout(
-          () => {
-            if (!isDragging.current) {
-              onAutoClose?.(id);
-            }
-          },
-          Math.max(timeLeftOnceBackgrounded.current, 1000) // minimum 1 second to avoid weird behavior
-        );
-      } else {
-        onAutoClose?.(id);
-      }
-    }, [id, onAutoClose, pauseWhenPageIsHidden]);
+    useAppStateListener({
+      onBackground,
+      onForeground,
+    });
 
-    useAppStateListener(
-      React.useMemo(
-        () => ({
-          onBackground,
-          onForeground,
-        }),
-        [onBackground, onForeground]
-      )
-    );
-
-    React.useEffect(() => {
-      const handlePromise = async () => {
-        if (isResolvingPromise.current) {
-          return;
-        }
-
-        if (promiseOptions?.promise) {
-          isResolvingPromise.current = true;
-
-          try {
-            const data = await promiseOptions.promise;
-            addToast({
-              title: promiseOptions.success(data) ?? 'Success',
-              id,
-              variant: 'success',
-              promiseOptions: undefined,
-              styles: promiseOptions.styles?.success,
-            });
-          } catch (error) {
-            addToast({
-              title:
-                typeof promiseOptions.error === 'function'
-                  ? promiseOptions.error(error)
-                  : (promiseOptions.error ?? 'Error'),
-              id,
-              variant: 'error',
-              promiseOptions: undefined,
-              styles: promiseOptions.styles?.error,
-            });
-          } finally {
-            isResolvingPromise.current = false;
-          }
-
-          return;
-        }
-
-        if (duration === Infinity) {
-          return;
-        }
-
-        // Start the timer only if it hasn't been started yet
-        if (!timerStart.current) {
-          timerStart.current = Date.now();
-          startTimer();
-        }
-      };
-
-      handlePromise();
-    }, [
-      duration,
-      id,
-      onDismiss,
-      promiseOptions,
-      addToast,
-      onAutoClose,
-      startTimer,
-    ]);
-
-    React.useEffect(() => {
-      // Cleanup function to clear the timer if it's still the same timer
-      return () => {
-        clearTimeout(timer.current);
-        timer.current = undefined;
-        timerStart.current = undefined;
-      };
-    }, [id]);
+    // Note: Timer and promise handling is now managed by the store
 
     const defaultStyles = useDefaultStyles({
       invert,
@@ -270,93 +157,27 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       variant,
     });
 
-    const variantStyles = {
-      success: successStyleCtx,
-      error: errorStyleCtx,
-      warning: warningStyleCtx,
-      info: infoStyleCtx,
-      loading: loadingStyleCtx,
+    const toastSwipeHandlerProps = {
+      onRemove: () => {
+        onDismiss?.(id);
+      },
+      onBegin: () => {
+        isDragging.current = true;
+        // Pause timer when dragging starts
+        toastStore.pauseTimer(id);
+      },
+      onFinalize: () => {
+        isDragging.current = false;
+        // Resume timer when dragging ends
+        toastStore.resumeTimer(id);
+      },
+      onPress: () => onPress?.(),
+      enabled: !promiseOptions && dismissible,
+      style: [toastContainerStyleCtx, styles?.toastContainer],
+      unstyled: unstyled,
+      important: important,
+      position: position,
     };
-
-    const variantStyle = variantStyles[variant];
-
-    const renderCloseButton = React.useMemo(() => {
-      if (!dismissible) {
-        return null;
-      }
-      if (close) {
-        return close;
-      }
-      if (closeButton) {
-        return (
-          <Pressable
-            onPress={() => onDismiss?.(id)}
-            hitSlop={10}
-            style={[closeButtonStyleCtx, styles?.closeButton]}
-          >
-            <X
-              size={20}
-              color={defaultStyles.closeButtonColor}
-              style={[closeButtonIconStyleCtx, styles?.closeButtonIcon]}
-            />
-          </Pressable>
-        );
-      }
-      return null;
-    }, [
-      close,
-      closeButton,
-      closeButtonIconStyleCtx,
-      closeButtonStyleCtx,
-      defaultStyles.closeButtonColor,
-      dismissible,
-      id,
-      onDismiss,
-      styles?.closeButton,
-      styles?.closeButtonIcon,
-    ]);
-
-    const toastSwipeHandlerProps = React.useMemo(
-      () => ({
-        onRemove: () => {
-          onDismiss?.(id);
-        },
-        onBegin: () => {
-          isDragging.current = true;
-        },
-        onFinalize: () => {
-          isDragging.current = false;
-          const timeElapsed = Date.now() - timerStart.current!;
-
-          if (timeElapsed < duration) {
-            timer.current = setTimeout(() => {
-              onDismiss?.(id);
-            }, duration - timeElapsed);
-          } else {
-            onDismiss?.(id);
-          }
-        },
-        onPress: () => onPress?.(),
-        enabled: !promiseOptions && dismissible,
-        style: [toastContainerStyleCtx, styles?.toastContainer],
-        unstyled: unstyled,
-        important: important,
-        position: position,
-      }),
-      [
-        onDismiss,
-        id,
-        duration,
-        dismissible,
-        promiseOptions,
-        onPress,
-        toastContainerStyleCtx,
-        styles?.toastContainer,
-        unstyled,
-        important,
-        position,
-      ]
-    );
 
     if (jsx) {
       return (
@@ -368,17 +189,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       );
     }
 
-    const backgroundComponentStyle = backgroundComponent
-      ? {
-          overflow: 'hidden' as const,
-          backgroundColor: 'transparent',
-        }
-      : undefined;
-
-    const contentContainerStyle = backgroundComponent
-      ? { position: 'relative' as const, zIndex: 1 }
-      : undefined;
-
     return (
       <ToastSwipeHandler {...toastSwipeHandlerProps}>
         <Animated.View style={wiggleAnimationStyle}>
@@ -387,21 +197,17 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
               unstyled ? undefined : elevationStyle,
               defaultStyles.toast,
               toastStyleCtx,
-              variantStyle,
               styles?.toast,
               style,
-              backgroundComponentStyle,
             ]}
             entering={entering}
             exiting={exiting}
           >
-            {backgroundComponent}
             <View
               style={[
                 defaultStyles.toastContent,
                 toastContentStyleCtx,
                 styles?.toastContent,
-                contentContainerStyle,
               ]}
             >
               {promiseOptions || variant === 'loading' ? (
@@ -421,13 +227,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                   richColors={richColors}
                 />
               )}
-              <View
-                style={[
-                  { flex: 1 },
-                  textContainerStyleCtx,
-                  styles?.textContainer,
-                ]}
-              >
+              <View style={{ flex: 1 }}>
                 <Text
                   style={[defaultStyles.title, titleStyleCtx, styles?.title]}
                 >
@@ -504,7 +304,19 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                   )}
                 </View>
               </View>
-              {renderCloseButton}
+              <CloseButton
+                dismissible={dismissible}
+                close={close}
+                closeButton={closeButton}
+                onDismiss={onDismiss}
+                id={id}
+                closeButtonStyle={[closeButtonStyleCtx, styles?.closeButton]}
+                closeButtonIconStyle={[
+                  closeButtonIconStyleCtx,
+                  styles?.closeButtonIcon,
+                ]}
+                defaultStyles={defaultStyles}
+              />
             </View>
           </Animated.View>
         </Animated.View>
@@ -550,4 +362,49 @@ const elevationStyle = {
     width: 0,
   },
   elevation: 4,
+};
+
+const CloseButton: React.FC<{
+  dismissible: ToastProps['dismissible'];
+  close: ToastProps['close'];
+  closeButton: ToastProps['closeButton'];
+  onDismiss: ToastProps['onDismiss'];
+  id: ToastProps['id'];
+  closeButtonStyle?: ViewProps['style'];
+  closeButtonIconStyle?: ViewProps['style'];
+  defaultStyles: DefaultStyles;
+}> = ({
+  dismissible,
+  close,
+  closeButton,
+  onDismiss,
+  id,
+  closeButtonStyle,
+  defaultStyles,
+  closeButtonIconStyle,
+}) => {
+  if (!dismissible) {
+    return null;
+  }
+
+  if (close) {
+    return close;
+  }
+
+  if (closeButton) {
+    return (
+      <Pressable
+        onPress={() => onDismiss?.(id)}
+        hitSlop={10}
+        style={closeButtonStyle}
+      >
+        <X
+          size={20}
+          color={defaultStyles.closeButtonColor}
+          style={closeButtonIconStyle}
+        />
+      </Pressable>
+    );
+  }
+  return null;
 };

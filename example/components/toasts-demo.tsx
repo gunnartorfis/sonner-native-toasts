@@ -7,11 +7,8 @@ import {
   ScrollView,
   Text,
   View,
-  StyleSheet,
-  Platform,
 } from 'react-native';
 import { toast } from 'sonner-native';
-import { BlurView } from 'expo-blur';
 
 export const ToastDemo: React.FC = () => {
   const [toastId, setToastId] = React.useState<string | number | null>(null);
@@ -147,7 +144,7 @@ export const ToastDemo: React.FC = () => {
         title="Toast with a successful promise"
         onPress={() => {
           toast.promise(
-            new Promise((resolve) => {
+            new Promise<string>((resolve) => {
               setTimeout(() => {
                 resolve('!');
               }, 2000);
@@ -164,7 +161,7 @@ export const ToastDemo: React.FC = () => {
         title="Toast with a failed promise"
         onPress={() => {
           toast.promise(
-            new Promise((_, reject) => {
+            new Promise<string>((_, reject) => {
               setTimeout(() => {
                 reject(new Error('promise failed'));
               }, 2000);
@@ -468,16 +465,6 @@ export const ToastDemo: React.FC = () => {
         onPress={() => {
           toast.success('Blur Background', {
             description: 'This toast has a blur background',
-            backgroundComponent: (
-              <BlurView
-                intensity={20}
-                tint="dark"
-                experimentalBlurMethod={
-                  Platform.OS === 'android' ? 'dimezisBlurView' : undefined
-                }
-                style={StyleSheet.absoluteFill}
-              />
-            ),
           });
         }}
       />
@@ -486,7 +473,7 @@ export const ToastDemo: React.FC = () => {
         onPress={() => {
           toast.success('Centered', {
             styles: {
-              textContainer: { flex: 0 },
+              toastContent: { flex: 0 },
               toast: { marginInline: 'auto' },
             },
           });

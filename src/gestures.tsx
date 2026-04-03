@@ -98,6 +98,7 @@ export const ToastSwipeHandler: React.FC<
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
+          return;
         }
 
         if (shouldDismiss) {

@@ -1,8 +1,8 @@
-import { getToastContext } from './toaster';
+import { toastStore } from './toast-store';
 import { type toast as toastType } from './types';
 
 export const toast: typeof toastType = (title, options) => {
-  return getToastContext().addToast({
+  return toastStore.addToast({
     title,
     variant: 'info',
     ...options,
@@ -10,7 +10,7 @@ export const toast: typeof toastType = (title, options) => {
 };
 
 toast.success = (title, options = {}) => {
-  return getToastContext().addToast({
+  return toastStore.addToast({
     ...options,
     title,
     variant: 'success',
@@ -18,11 +18,11 @@ toast.success = (title, options = {}) => {
 };
 
 toast.wiggle = (id) => {
-  return getToastContext().wiggleToast(id);
+  return toastStore.wiggleToast(id);
 };
 
 toast.error = (title: string, options = {}) => {
-  return getToastContext().addToast({
+  return toastStore.addToast({
     ...options,
     title,
     variant: 'error',
@@ -30,7 +30,7 @@ toast.error = (title: string, options = {}) => {
 };
 
 toast.warning = (title: string, options = {}) => {
-  return getToastContext().addToast({
+  return toastStore.addToast({
     ...options,
     title,
     variant: 'warning',
@@ -38,28 +38,30 @@ toast.warning = (title: string, options = {}) => {
 };
 
 toast.info = (title: string, options = {}) => {
-  return getToastContext().addToast({
+  return toastStore.addToast({
     title,
     ...options,
     variant: 'info',
   });
 };
 
-toast.promise = (promise, options) => {
-  return getToastContext().addToast({
-    ...options,
-    title: options.loading,
+toast.promise = <T,>(promise: Promise<T>, options: Parameters<typeof toastType.promise<T>>[1]) => {
+  const { loading, success, error, ...restOptions } = options;
+  return toastStore.addToast({
+    ...restOptions,
+    title: loading,
     variant: 'info',
-    styles: options.styles?.loading,
     promiseOptions: {
-      ...options,
-      promise,
+      promise: promise as Promise<unknown>,
+      loading,
+      success: success as (result: unknown) => string,
+      error,
     },
   });
 };
 
 toast.custom = (jsx, options) => {
-  return getToastContext().addToast({
+  return toastStore.addToast({
     title: '',
     variant: 'info',
     jsx,
@@ -68,7 +70,7 @@ toast.custom = (jsx, options) => {
 };
 
 toast.loading = (title, options = {}) => {
-  return getToastContext().addToast({
+  return toastStore.addToast({
     title,
     variant: 'loading',
     ...options,
@@ -76,5 +78,5 @@ toast.loading = (title, options = {}) => {
 };
 
 toast.dismiss = (id) => {
-  return getToastContext().dismissToast(id);
+  return toastStore.dismissToast(id);
 };

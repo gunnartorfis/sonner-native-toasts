@@ -2,7 +2,7 @@ import type { TextStyle, ViewStyle } from 'react-native';
 import { useColors } from './use-colors';
 import type { ToastVariant } from './types';
 
-type DefaultStyles = {
+export type DefaultStyles = {
   toast: ViewStyle;
   toastContent: ViewStyle;
   title: TextStyle;

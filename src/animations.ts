@@ -1,7 +1,6 @@
-import React from 'react';
 import { withTiming } from 'react-native-reanimated';
-import { easeInOutCubic, easeOutCirc } from './easings';
 import { useToastContext } from './context';
+import { easeInOutCubic, easeOutCirc } from './easings';
 import type { ToastPosition } from './types';
 
 export const ANIMATION_DURATION = 300;
@@ -12,19 +11,16 @@ export const useToastLayoutAnimations = (
   const { position: positionCtx } = useToastContext();
   const position = positionProp || positionCtx;
 
-  return React.useMemo(
-    () => ({
-      entering: () => {
-        'worklet';
-        return getToastEntering({ position });
-      },
-      exiting: () => {
-        'worklet';
-        return getToastExiting({ position });
-      },
-    }),
-    [position]
-  );
+  return {
+    entering: () => {
+      'worklet';
+      return getToastEntering({ position });
+    },
+    exiting: () => {
+      'worklet';
+      return getToastExiting({ position });
+    },
+  };
 };
 
 type GetToastAnimationParams = {
