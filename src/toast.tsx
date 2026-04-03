@@ -137,7 +137,11 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     });
 
     const isDragging = React.useRef(false);
-    const toastRef = React.useRef<View>(null);
+    const toastRef = React.useRef<
+      View & {
+        getBoundingClientRect?: () => { height: number };
+      }
+    >(null);
 
     const wiggleSharedValue = useSharedValue(1);
 
@@ -241,19 +245,29 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       onForeground,
     });
 
-    const handleToastLayout = React.useCallback(
-      (event: { nativeEvent: { layout: { height: number } } }) => {
-        if (!enableStacking) {
-          return;
-        }
-        const { height } = event.nativeEvent.layout;
+    // Synchronous layout measurement (New Architecture: getBoundingClientRect)
+    // Falls back to async measureInWindow on old architecture
+    React.useLayoutEffect(() => {
+      if (!enableStacking || !toastRef.current) {
+        return;
+      }
+
+      const reportHeight = (height: number) => {
         toastStore.setToastHeight(id, height);
         if (index === numberOfToasts - 1) {
           newestToastHeightShared.value = height;
         }
-      },
-      [enableStacking, id, index, numberOfToasts, newestToastHeightShared]
-    );
+      };
+
+      if (toastRef.current.getBoundingClientRect) {
+        const rect = toastRef.current.getBoundingClientRect();
+        reportHeight(rect.height);
+      } else {
+        toastRef.current.measureInWindow((_x, _y, _w, height) => {
+          reportHeight(height);
+        });
+      }
+    }, [enableStacking, id, index, numberOfToasts, newestToastHeightShared]);
 
     const defaultStyles = useDefaultStyles({
       invert,
@@ -320,7 +334,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
           <Animated.View style={absolutePositionStyle}>
             <Animated.View
               ref={toastRef}
-              onLayout={handleToastLayout}
+
               style={horizontalStackingStyle}
               entering={entering}
               exiting={exiting}
@@ -355,7 +369,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
           >
             <Animated.View
               ref={toastRef}
-              onLayout={handleToastLayout}
+
               style={[
                 unstyled ? undefined : elevationStyle,
                 defaultStyles.toast,
