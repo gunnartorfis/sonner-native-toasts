@@ -49,9 +49,7 @@ export const ToastSwipeHandler: React.FC<
   const translate = useSharedValue(0);
   const {
     swipeToDismissDirection: direction,
-    gap,
     position: positionCtx,
-    enableStacking,
   } = useToastContext();
   const position = positionProps || positionCtx;
 
@@ -203,7 +201,6 @@ export const ToastSwipeHandler: React.FC<
             ? undefined
             : {
                 justifyContent: 'center',
-                marginBottom: enableStacking ? 0 : gap,
               },
           { width: '100%', zIndex: -(numberOfToasts - index) },
           Platform.OS === 'android'

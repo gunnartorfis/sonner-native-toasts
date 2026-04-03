@@ -242,14 +242,14 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     });
 
     // Synchronous layout read via New Architecture's getBoundingClientRect.
-    // Runs during commit so stacking positions resolve in the same frame.
+    // Runs during commit so positions resolve in the same frame.
     React.useLayoutEffect(() => {
-      if (!enableStacking || !toastRef.current) {
+      if (!toastRef.current) {
         return;
       }
       const { height } = toastRef.current.getBoundingClientRect();
       toastStore.setToastHeight(id, height);
-    }, [enableStacking, id, index, numberOfToasts]);
+    }, [id, index, numberOfToasts]);
 
     const defaultStyles = useDefaultStyles({
       invert,
