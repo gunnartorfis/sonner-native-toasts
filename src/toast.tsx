@@ -148,13 +148,18 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
 
     // Absolute positioning style for toasts
     const absolutePositionStyle = useAnimatedStyle(() => {
-      return {
+      const base: Record<string, unknown> = {
         position: 'absolute',
-        top: 0,
         width: '100%',
         transform: [{ translateY: yPosition.value }],
       };
-    }, [yPosition]);
+      if (toastPosition === 'bottom-center') {
+        base.bottom = 0;
+      } else {
+        base.top = 0;
+      }
+      return base;
+    }, [yPosition, toastPosition]);
 
     // Horizontal margin for stacking effect
     const horizontalMargin = useDerivedValue(() => {
