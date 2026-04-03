@@ -137,11 +137,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     });
 
     const isDragging = React.useRef(false);
-    const toastRef = React.useRef<
-      View & {
-        getBoundingClientRect?: () => { height: number };
-      }
-    >(null);
+    const toastRef = React.useRef<View & { getBoundingClientRect(): DOMRect }>(null);
 
     const wiggleSharedValue = useSharedValue(1);
 
@@ -245,27 +241,16 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       onForeground,
     });
 
-    // Synchronous layout measurement (New Architecture: getBoundingClientRect)
-    // Falls back to async measureInWindow on old architecture
+    // Synchronous layout read via New Architecture's getBoundingClientRect.
+    // Runs during commit so stacking positions resolve in the same frame.
     React.useLayoutEffect(() => {
       if (!enableStacking || !toastRef.current) {
         return;
       }
-
-      const reportHeight = (height: number) => {
-        toastStore.setToastHeight(id, height);
-        if (index === numberOfToasts - 1) {
-          newestToastHeightShared.value = height;
-        }
-      };
-
-      if (toastRef.current.getBoundingClientRect) {
-        const rect = toastRef.current.getBoundingClientRect();
-        reportHeight(rect.height);
-      } else {
-        toastRef.current.measureInWindow((_x, _y, _w, height) => {
-          reportHeight(height);
-        });
+      const { height } = toastRef.current.getBoundingClientRect();
+      toastStore.setToastHeight(id, height);
+      if (index === numberOfToasts - 1) {
+        newestToastHeightShared.value = height;
       }
     }, [enableStacking, id, index, numberOfToasts, newestToastHeightShared]);
 
