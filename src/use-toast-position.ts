@@ -27,6 +27,10 @@ export const useToastPosition = ({
   isExpanded: boolean;
   stackGap: number;
 }) => {
+  // Serialize to stable dep keys so useDerivedValue doesn't re-run on same-content new refs
+  const orderedIdsKey = orderedToastIds.join(',');
+  const heightsKey = JSON.stringify(allToastHeights);
+
   const yPosition = useDerivedValue(() => {
     'worklet';
 
@@ -46,15 +50,16 @@ export const useToastPosition = ({
       duration: STACKING_ANIMATION_DURATION,
       easing: easeOutQuartFn,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     id,
     index,
     numberOfToasts,
     enableStacking,
     position,
-    allToastHeights,
+    heightsKey,
     gap,
-    orderedToastIds,
+    orderedIdsKey,
     isExpanded,
     stackGap,
   ]);

@@ -47,8 +47,7 @@ export const calculateToastPosition = ({
       return offsetFromCenter;
     } else {
       // Non-stacking center: calculate based on heights
-      // When expanded, use stackGap instead of gap for tighter spacing
-      const effectiveGap = isExpanded ? stackGap : gap;
+      const effectiveGap = gap;
       let totalOffset = 0;
       for (let i = 0; i < index; i++) {
         const toastId = orderedToastIds[i];

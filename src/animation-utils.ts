@@ -30,8 +30,8 @@ export const getExitingTranslateY = ({
     return 0;
   }
 
-  // If only 1 toast, slide fully
-  if (numberOfToasts === 1) {
+  // If only 1 toast (or unknown), slide fully
+  if (numberOfToasts == null || numberOfToasts === 1) {
     if (position === 'top-center') {
       return -150;
     }

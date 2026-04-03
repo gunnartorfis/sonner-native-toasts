@@ -45,7 +45,7 @@ class ToastStore {
   private config: ToastStoreConfig = {};
   private hideOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
   private promiseResolvers = new Map<string | number, boolean>();
-  private lastCollapseTime = 0;
+  private collapseCooldown = false;
 
   subscribe = (callback: Subscriber) => {
     this.subscribers.add(callback);
@@ -443,6 +443,7 @@ class ToastStore {
   };
 
   setToastHeight = (id: string | number, height: number) => {
+    if (this.state.toastHeights[id] === height) return;
     this.state = {
       ...this.state,
       toastHeights: {
@@ -477,17 +478,18 @@ class ToastStore {
       ...this.state,
       isExpanded: false,
     };
-    // Track when we collapsed to prevent immediate re-expansion
-    this.lastCollapseTime = Date.now();
+    // Prevent immediate re-expansion — flag clears after timeout
+    this.collapseCooldown = true;
+    setTimeout(() => {
+      this.collapseCooldown = false;
+    }, 100);
     // Resume all timers when collapsed
     this.resumeAllTimers();
     this.notify();
   };
 
   toggleExpand = () => {
-    // Prevent immediate re-expansion after a collapse (100ms cooldown)
-    const timeSinceCollapse = Date.now() - this.lastCollapseTime;
-    if (!this.state.isExpanded && timeSinceCollapse < 100) {
+    if (!this.state.isExpanded && this.collapseCooldown) {
       return;
     }
 
