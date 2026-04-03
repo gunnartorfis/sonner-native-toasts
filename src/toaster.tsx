@@ -24,14 +24,16 @@ export const Toaster: React.FC<ToasterProps> = ({
     toastStore.getSnapshot
   );
 
-  if (!storeState.shouldShowOverlay) {
-    return <ToasterUI {...toasterProps} />;
+  const { toasts, shouldShowOverlay } = storeState;
+
+  if (!shouldShowOverlay) {
+    return <ToasterUI {...toasterProps} toasts={toasts} />;
   }
 
   if (ToasterOverlayWrapper) {
     return (
       <ToasterOverlayWrapper>
-        <ToasterUI {...toasterProps} />
+        <ToasterUI {...toasterProps} toasts={toasts} />
       </ToasterOverlayWrapper>
     );
   }
@@ -39,15 +41,16 @@ export const Toaster: React.FC<ToasterProps> = ({
   if (Platform.OS === 'ios') {
     return (
       <FullWindowOverlay>
-        <ToasterUI {...toasterProps} />
+        <ToasterUI {...toasterProps} toasts={toasts} />
       </FullWindowOverlay>
     );
   }
 
-  return <ToasterUI {...toasterProps} />;
+  return <ToasterUI {...toasterProps} toasts={toasts} />;
 };
 
-export const ToasterUI: React.FC<ToasterProps> = ({
+const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
+  toasts,
   duration = toastDefaultValues.duration,
   position = toastDefaultValues.position,
   offset = toastDefaultValues.offset,
@@ -65,13 +68,6 @@ export const ToasterUI: React.FC<ToasterProps> = ({
   ToastWrapper,
   ...props
 }) => {
-  const storeState = React.useSyncExternalStore(
-    toastStore.subscribe,
-    toastStore.getSnapshot,
-    toastStore.getSnapshot
-  );
-
-  const { toasts } = storeState;
 
   // Sync store config on every render so it's available immediately
   toastStore.setConfig({
