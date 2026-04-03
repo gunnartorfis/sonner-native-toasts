@@ -65,7 +65,12 @@ export const calculateToastPosition = ({
   }
 
   if (effectiveEnableStacking) {
-    return 0;
+    if (position === 'bottom-center') {
+      // Back toast (idx 0) above, front toast (highest idx) at bottom
+      return -stackGap * (numberOfToasts - 1 - index);
+    }
+    // Back toast (idx 0) at top, front toast (highest idx) below
+    return stackGap * index;
   } else {
     // Non-stacking mode: fully separated by gap
     // When expanded, use stackGap instead of gap for tighter spacing
