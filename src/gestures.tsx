@@ -202,7 +202,13 @@ export const ToastSwipeHandler: React.FC<
             : {
                 justifyContent: 'center',
               },
-          { width: '100%', zIndex: -(numberOfToasts - index) },
+          {
+            width: '100%',
+            zIndex:
+              position === 'top-center'
+                ? -(index + 1)
+                : -(numberOfToasts - index),
+          },
           Platform.OS === 'android'
             ? {
                 opacity: 1,

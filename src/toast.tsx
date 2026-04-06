@@ -109,18 +109,24 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     const backgroundComponent =
       backgroundComponentProps ?? backgroundComponentCtx;
 
+    const toastPosition = position ?? positionCtx;
+
     // Determine if this toast should be hidden due to visibility limit
+    // For top-center (reversed array), front = index 0; for others, front = highest index
+    const distanceFromFront =
+      toastPosition === 'top-center'
+        ? index
+        : numberOfToasts - 1 - index;
     const isHiddenByLimit =
       enableStacking &&
-      index + 1 >= (visibleToastsCtx ?? toastDefaultValues.visibleToasts);
+      distanceFromFront >=
+        (visibleToastsCtx ?? toastDefaultValues.visibleToasts);
 
     const { entering, exiting } = useToastLayoutAnimations(
       position,
       isHiddenByLimit,
       numberOfToasts
     );
-
-    const toastPosition = position ?? positionCtx;
 
     // Calculate absolute position for this toast
     const stackGap = toastDefaultValues.stackGap;
@@ -149,39 +155,25 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       };
     }, [wiggleSharedValue]);
 
-    // Absolute positioning style for toasts
-    const absolutePositionStyle = useAnimatedStyle(() => {
-      const base: Record<string, unknown> = {
-        position: 'absolute',
-        width: '100%',
-        transform: [{ translateY: yPosition.value }],
-      };
-      if (toastPosition === 'bottom-center') {
-        base.bottom = 0;
-      } else {
-        base.top = 0;
-      }
-      return base;
-    }, [yPosition, toastPosition]);
-
-    // Horizontal margin for stacking effect
-    const horizontalMargin = useDerivedValue(() => {
+    // ScaleX for stacking visual narrowing (replaces marginHorizontal to avoid
+    // layout-width changes that cause text rewrapping and height differences)
+    const screenWidth = Dimensions.get('window').width;
+    const stackScaleX = useDerivedValue(() => {
       'worklet';
-      // When expanded, remove horizontal margin
       if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
-        return withTiming(0, {
+        return withTiming(1, {
           duration: STACKING_ANIMATION_DURATION,
           easing: easeOutQuartFn,
         });
       }
 
-      // Calculate multiplier based on position to match vertical stacking
       const multiplier =
         toastPosition === 'top-center' || toastPosition === 'center'
-          ? index // Top/Center: newest (index 0) has 0 margin, older have more
-          : numberOfToasts - index - 1; // Bottom: newest (highest index) has 0 margin
-
-      return withTiming(stackGap * multiplier, {
+          ? index
+          : numberOfToasts - index - 1;
+      const narrowAmount = stackGap * multiplier * 2;
+      const scale = Math.max(0.8, 1 - narrowAmount / screenWidth);
+      return withTiming(scale, {
         duration: STACKING_ANIMATION_DURATION,
         easing: easeOutQuartFn,
       });
@@ -192,13 +184,26 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       toastPosition,
       isExpanded,
       stackGap,
+      screenWidth,
     ]);
 
-    const horizontalStackingStyle = useAnimatedStyle(() => {
-      return {
-        marginHorizontal: horizontalMargin.value,
+    // Absolute positioning style for toasts
+    const absolutePositionStyle = useAnimatedStyle(() => {
+      const base: Record<string, unknown> = {
+        position: 'absolute',
+        width: '100%',
+        transform: [
+          { translateY: yPosition.value },
+          { scaleX: stackScaleX.value },
+        ],
       };
-    }, [horizontalMargin]);
+      if (toastPosition === 'bottom-center') {
+        base.bottom = 0;
+      } else {
+        base.top = 0;
+      }
+      return base;
+    }, [yPosition, toastPosition, stackScaleX]);
 
     const wiggle = React.useCallback(() => {
       'worklet';
@@ -325,7 +330,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
             <Animated.View
               ref={toastRef}
 
-              style={horizontalStackingStyle}
               entering={entering}
               exiting={exiting}
             >
@@ -355,7 +359,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       >
         <Animated.View style={absolutePositionStyle}>
           <Animated.View
-            style={[wiggleAnimationStyle, horizontalStackingStyle]}
+            style={wiggleAnimationStyle}
           >
             <Animated.View
               ref={toastRef}
