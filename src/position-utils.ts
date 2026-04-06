@@ -62,12 +62,21 @@ export const calculateToastPosition = ({
   }
 
   if (effectiveEnableStacking) {
+    // Position back toasts so they peek by exactly stackGap below/above
+    // the front toast, accounting for height differences between toasts.
+    const currentId = orderedToastIds[index];
+    const currentHeight = allToastHeights[currentId!] || ESTIMATED_TOAST_HEIGHT;
+
     if (position === 'bottom-center') {
-      // Back toast (idx 0) above, front toast (highest idx) at bottom
-      return -stackGap * (numberOfToasts - 1 - index);
+      const frontId = orderedToastIds[numberOfToasts - 1];
+      const frontHeight = allToastHeights[frontId!] || ESTIMATED_TOAST_HEIGHT;
+      const distFromFront = numberOfToasts - 1 - index;
+      return -(frontHeight + distFromFront * stackGap - currentHeight);
     }
-    // Back toast (idx 0) at top, front toast (highest idx) below
-    return stackGap * index;
+    // top-center
+    const frontId = orderedToastIds[0];
+    const frontHeight = allToastHeights[frontId!] || ESTIMATED_TOAST_HEIGHT;
+    return frontHeight + index * stackGap - currentHeight;
   } else {
     // Non-stacking mode: fully separated by gap
     // When expanded, use stackGap instead of gap for tighter spacing
