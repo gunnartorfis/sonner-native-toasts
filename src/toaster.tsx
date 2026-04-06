@@ -184,11 +184,11 @@ const ToasterUI: React.FC<
   const possiblePositions = React.useMemo(
     () =>
       allPositions.filter(
-        (possiblePossition) =>
+        (possiblePosition) =>
           toasts.find(
             (positionedToast) =>
-              positionedToast.position === possiblePossition
-          ) || position === possiblePossition
+              positionedToast.position === possiblePosition
+          ) || position === possiblePosition
       ),
     [toasts, position]
   );
