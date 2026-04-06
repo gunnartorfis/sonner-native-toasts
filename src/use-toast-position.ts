@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useDerivedValue, withTiming } from 'react-native-reanimated';
 import { STACKING_ANIMATION_DURATION } from './animations';
 import { easeOutQuartFn } from './easings';
@@ -29,7 +30,10 @@ export const useToastPosition = ({
   stackGap: number;
   toastHeightsVersion: number;
 }) => {
-  const orderedIdsKey = orderedToastIds.join(',');
+  const orderedIdsKey = useMemo(
+    () => orderedToastIds.join(','),
+    [orderedToastIds]
+  );
 
   const yPosition = useDerivedValue(() => {
     'worklet';

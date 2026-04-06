@@ -2,12 +2,13 @@ import * as React from 'react';
 import { Platform } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 import { toastDefaultValues } from './constants';
-import { ToastContext } from './context';
+import { DynamicToastContext, ToastContext } from './context';
 import { getOrderedToastIds } from './position-utils';
 import { Positioner } from './positioner';
 import { Toast } from './toast';
 import {
-  type ToasterContextType,
+  type DynamicToastContextType,
+  type StableToastContextType,
   type ToasterProps,
   type ToastPosition,
   type ToastProps,
@@ -17,6 +18,21 @@ const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
 const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
 const EMPTY_ICONS: NonNullable<ToasterProps['icons']> = {};
+
+function orderToastsFromPosition(
+  currentToasts: ToastProps[],
+  position: ToastPosition,
+  enableStacking: boolean
+): ToastProps[] {
+  if (enableStacking) {
+    return position === 'top-center'
+      ? currentToasts.slice().reverse()
+      : currentToasts;
+  }
+  return position === 'bottom-center'
+    ? currentToasts
+    : currentToasts.slice().reverse();
+}
 
 export const Toaster: React.FC<ToasterProps> = ({
   ToasterOverlayWrapper,
@@ -95,7 +111,7 @@ const ToasterUI: React.FC<
     });
   }, [autoWiggleOnUpdate, visibleToasts, duration, pauseWhenPageIsHidden]);
 
-  const value: ToasterContextType = React.useMemo(
+  const value: StableToastContextType = React.useMemo(
     () => ({
       duration: duration ?? toastDefaultValues.duration,
       position: position ?? toastDefaultValues.position,
@@ -117,12 +133,6 @@ const ToasterUI: React.FC<
       richColors: richColors ?? toastDefaultValues.richColors,
       enableStacking: enableStacking ?? toastDefaultValues.enableStacking,
       visibleToasts: visibleToasts ?? toastDefaultValues.visibleToasts,
-      toastHeights,
-      toastHeightsVersion,
-      isExpanded,
-      expand: toastStore.expand,
-      collapse: toastStore.collapse,
-      toggleExpand: toastStore.toggleExpand,
     }),
     [
       duration,
@@ -140,26 +150,24 @@ const ToasterUI: React.FC<
       richColors,
       enableStacking,
       visibleToasts,
+    ]
+  );
+
+  const dynamicValue: DynamicToastContextType = React.useMemo(
+    () => ({
       toastHeights,
       toastHeightsVersion,
       isExpanded,
-    ]
+      expand: toastStore.expand,
+      collapse: toastStore.collapse,
+      toggleExpand: toastStore.toggleExpand,
+    }),
+    [toastHeights, toastHeightsVersion, isExpanded]
   );
-  const orderToastsFromPosition: (args: {
-    currentToasts: ToastProps[];
-    enableStacking: boolean;
-  }) => ToastProps[] = ({ currentToasts, enableStacking }) => {
-    if (enableStacking) {
-      // For top: reverse order so newest toast is rendered first (appears behind)
-      // For bottom: keep original order so newest toast is rendered last (appears in front)
-      return position === 'top-center'
-        ? currentToasts.slice().reverse()
-        : currentToasts;
-    }
-    return position === 'bottom-center'
-      ? currentToasts
-      : currentToasts.slice().reverse();
-  };
+  const orderedToasts = React.useMemo(
+    () => orderToastsFromPosition(toasts, position, enableStacking),
+    [toasts, position, enableStacking]
+  );
 
   const onDismiss = React.useCallback<
     NonNullable<React.ComponentProps<typeof Toast>['onDismiss']>
@@ -173,21 +181,21 @@ const ToasterUI: React.FC<
     toastStore.dismissToast(id, 'onAutoClose');
   }, []);
 
-  const possiblePositions = allPositions.filter((possiblePossition) => {
-    return (
-      toasts.find(
-        (positionedToast) => positionedToast.position === possiblePossition
-      ) || value.position === possiblePossition
-    );
-  });
-
-  const orderedToasts = orderToastsFromPosition({
-    currentToasts: toasts,
-    enableStacking,
-  });
+  const possiblePositions = React.useMemo(
+    () =>
+      allPositions.filter(
+        (possiblePossition) =>
+          toasts.find(
+            (positionedToast) =>
+              positionedToast.position === possiblePossition
+          ) || position === possiblePossition
+      ),
+    [toasts, position]
+  );
 
   return (
     <ToastContext.Provider value={value}>
+      <DynamicToastContext.Provider value={dynamicValue}>
       {possiblePositions.map((currentPosition, positionIndex) => {
         const toastsForPosition = orderedToasts.filter(
           (possibleToast) =>
@@ -211,48 +219,8 @@ const ToasterUI: React.FC<
                 <Toast
                   {...props}
                   {...toastToRender}
-                  style={{
-                    ...props.style,
-                    ...toastToRender.style,
-                  }}
-                  styles={{
-                    toastContainer: {
-                      ...props.styles?.toastContainer,
-                      ...toastToRender.styles?.toastContainer,
-                    },
-                    toast: {
-                      ...props.styles?.toast,
-                      ...toastToRender.styles?.toast,
-                    },
-                    toastContent: {
-                      ...props.styles?.toastContent,
-                      ...toastToRender.styles?.toastContent,
-                    },
-                    textContainer: {
-                      ...props.styles?.textContainer,
-                      ...toastToRender.styles?.textContainer,
-                    },
-                    title: {
-                      ...props.styles?.title,
-                      ...toastToRender.styles?.title,
-                    },
-                    description: {
-                      ...props.styles?.description,
-                      ...toastToRender.styles?.description,
-                    },
-                    buttons: {
-                      ...props.styles?.buttons,
-                      ...toastToRender.styles?.buttons,
-                    },
-                    closeButton: {
-                      ...props.styles?.closeButton,
-                      ...toastToRender.styles?.closeButton,
-                    },
-                    closeButtonIcon: {
-                      ...props.styles?.closeButtonIcon,
-                      ...toastToRender.styles?.closeButtonIcon,
-                    },
-                  }}
+                  parentStyle={props.style}
+                  parentStyles={props.styles}
                   onDismiss={onDismiss}
                   onAutoClose={onAutoClose}
                   index={index}
@@ -278,6 +246,7 @@ const ToasterUI: React.FC<
         </Positioner>
         );
       })}
+    </DynamicToastContext.Provider>
     </ToastContext.Provider>
   );
 };

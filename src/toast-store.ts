@@ -13,6 +13,7 @@ type ToastTimer = {
 
 type ToastStoreState = {
   toasts: ToastProps[];
+  toastsById: Map<string | number, ToastProps>;
   toastsCounter: number;
   toastRefs: Record<string | number, React.RefObject<ToastRef | null>>;
   shouldShowOverlay: boolean;
@@ -34,6 +35,7 @@ type ToastStoreConfig = {
 class ToastStore {
   private state: ToastStoreState = {
     toasts: [],
+    toastsById: new Map(),
     toastsCounter: 1,
     toastRefs: {},
     shouldShowOverlay: false,
@@ -67,6 +69,14 @@ class ToastStore {
 
   private notify = () => {
     this.subscribers.forEach((callback) => callback());
+  };
+
+  private rebuildIndex = (toasts: ToastProps[]): Map<string | number, ToastProps> => {
+    const map = new Map<string | number, ToastProps>();
+    for (const toast of toasts) {
+      map.set(toast.id, toast);
+    }
+    return map;
   };
 
   private startTimer = ({
@@ -118,21 +128,22 @@ class ToastStore {
 
   resumeTimer = (id: string | number) => {
     const timer = this.state.toastTimers[id];
-    const toast = this.state.toasts.find((t) => t.id === id);
+    if (!timer || !timer.isPaused) return;
 
-    if (timer && timer.isPaused && toast) {
-      timer.isPaused = false;
-      timer.startTime = Date.now();
+    const toast = this.state.toastsById.get(id);
+    if (!toast) return;
 
-      timer.timeout = setTimeout(
-        () => {
-          toast.onAutoClose?.(id);
-          this.dismissToast(id, 'onAutoClose');
-          delete this.state.toastTimers[id];
-        },
-        Math.max(timer.remainingTime, 1000)
-      ); // minimum 1 second
-    }
+    timer.isPaused = false;
+    timer.startTime = Date.now();
+
+    timer.timeout = setTimeout(
+      () => {
+        toast.onAutoClose?.(id);
+        this.dismissToast(id, 'onAutoClose');
+        delete this.state.toastTimers[id];
+      },
+      Math.max(timer.remainingTime, 1000)
+    );
   };
 
   pauseAllTimers = () => {
@@ -164,7 +175,8 @@ class ToastStore {
     try {
       const data = await promiseOptions.promise;
 
-      // Update the toast with success
+      if (!this.state.toastsById.has(id)) return;
+
       this.addToast({
         title: promiseOptions.success(data) ?? 'Success',
         id,
@@ -173,7 +185,8 @@ class ToastStore {
         duration: toast.duration,
       });
     } catch (error) {
-      // Update the toast with error
+      if (!this.state.toastsById.has(id)) return;
+
       this.addToast({
         title:
           typeof promiseOptions.error === 'function'
@@ -223,9 +236,7 @@ class ToastStore {
       orderedToastIds: [],
     };
 
-    const existingToast = this.state.toasts.find(
-      (currentToast) => currentToast.id === newToast.id
-    );
+    const existingToast = this.state.toastsById.get(newToast.id);
 
     const shouldUpdate = existingToast && options?.id;
 
@@ -266,6 +277,7 @@ class ToastStore {
       this.state = {
         ...this.state,
         toasts: updatedToasts,
+        toastsById: this.rebuildIndex(updatedToasts),
         shouldShowOverlay: true,
       };
     } else {
@@ -288,6 +300,7 @@ class ToastStore {
       this.state = {
         ...this.state,
         toasts: newToasts,
+        toastsById: this.rebuildIndex(newToasts),
         toastRefs: newToastRefs,
         toastsCounter: nextCounter,
         shouldShowOverlay: true,
@@ -323,12 +336,8 @@ class ToastStore {
     origin?: 'onDismiss' | 'onAutoClose'
   ): string | number | undefined => {
     if (!id) {
-      // Clear all timers
-      Object.keys(this.state.toastTimers).forEach((timerId) => {
-        this.clearTimer(timerId);
-      });
-
       this.state.toasts.forEach((currentToast) => {
+        this.clearTimer(currentToast.id);
         if (origin === 'onDismiss') {
           currentToast.onDismiss?.(currentToast.id);
         } else {
@@ -339,6 +348,7 @@ class ToastStore {
       this.state = {
         ...this.state,
         toasts: [],
+        toastsById: new Map(),
         toastsCounter: 1,
         toastTimers: {},
         toastHeights: {},
@@ -353,9 +363,7 @@ class ToastStore {
     // Clear timer for this specific toast
     this.clearTimer(id);
 
-    const toastForCallback = this.state.toasts.find(
-      (currentToast) => currentToast.id === id
-    );
+    const toastForCallback = this.state.toastsById.get(id);
 
     const filteredToasts = this.state.toasts.filter(
       (currentToast) => currentToast.id !== id
@@ -370,6 +378,7 @@ class ToastStore {
     this.state = {
       ...this.state,
       toasts: filteredToasts,
+      toastsById: this.rebuildIndex(filteredToasts),
       toastHeights: updatedHeights,
       toastHeightsVersion: this.state.toastHeightsVersion + 1,
       isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
@@ -411,7 +420,7 @@ class ToastStore {
   };
 
   wiggleToast = (id: string | number) => {
-    const toast = this.state.toasts.find((t) => t.id === id);
+    const toast = this.state.toastsById.get(id);
     if (!toast) {
       return;
     }
