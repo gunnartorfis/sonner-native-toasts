@@ -48,6 +48,7 @@ class ToastStore {
   private hideOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
   private promiseResolvers = new Map<string | number, boolean>();
   private collapseCooldown = false;
+  private collapseCooldownTimeout: ReturnType<typeof setTimeout> | null = null;
 
   subscribe = (callback: Subscriber) => {
     this.subscribers.add(callback);
@@ -82,7 +83,6 @@ class ToastStore {
       return;
     }
 
-    // Clear existing timer if any
     this.clearTimer(id);
 
     const timeout = setTimeout(() => {
@@ -309,7 +309,6 @@ class ToastStore {
       }
     }
 
-    // Show overlay when toasts are added
     if (this.hideOverlayTimeout) {
       clearTimeout(this.hideOverlayTimeout);
       this.hideOverlayTimeout = null;
@@ -362,11 +361,9 @@ class ToastStore {
       (currentToast) => currentToast.id !== id
     );
 
-    // Clean up height for dismissed toast
     const updatedHeights = { ...this.state.toastHeights };
     delete updatedHeights[id];
 
-    // Auto-collapse if only one toast remains
     const shouldAutoCollapse =
       filteredToasts.length <= 1 && this.state.isExpanded;
 
@@ -378,7 +375,6 @@ class ToastStore {
       isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
     };
 
-    // Resume timers if we auto-collapsed
     if (shouldAutoCollapse) {
       this.resumeAllTimers();
     }
@@ -459,15 +455,6 @@ class ToastStore {
     this.notify();
   };
 
-  getToastHeight = (id: string | number): number => {
-    return this.state.toastHeights[id] ?? 0;
-  };
-
-  getNewestToastHeight = (): number => {
-    const newestToast = this.state.toasts[this.state.toasts.length - 1];
-    return newestToast ? (this.state.toastHeights[newestToast.id] ?? 0) : 0;
-  };
-
   expand = () => {
     this.state = {
       ...this.state,
@@ -485,8 +472,12 @@ class ToastStore {
     };
     // Prevent immediate re-expansion — flag clears after timeout
     this.collapseCooldown = true;
-    setTimeout(() => {
+    if (this.collapseCooldownTimeout) {
+      clearTimeout(this.collapseCooldownTimeout);
+    }
+    this.collapseCooldownTimeout = setTimeout(() => {
       this.collapseCooldown = false;
+      this.collapseCooldownTimeout = null;
     }, 100);
     // Resume all timers when collapsed
     this.resumeAllTimers();

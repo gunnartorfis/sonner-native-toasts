@@ -67,20 +67,19 @@ export const calculateOutsidePressableArea = ({
     visibleToasts ?? 3
   );
 
-  // Calculate total height: use actual heights if available, otherwise estimate
-  const totalToastHeight =
-    toastHeightValues.length > 0
-      ? toastHeightValues
-          .slice(0, numberOfToastsToCalculate)
-          .reduce((sum, height) => sum + height, 0)
-      : ESTIMATED_TOAST_HEIGHT * numberOfToastsToCalculate;
+  let totalToastHeight = 0;
+  if (toastHeightValues.length > 0) {
+    for (let i = 0; i < numberOfToastsToCalculate; i++) {
+      totalToastHeight += toastHeightValues[i]!;
+    }
+  } else {
+    totalToastHeight = ESTIMATED_TOAST_HEIGHT * numberOfToastsToCalculate;
+  }
 
   const gapHeight = gap * Math.max(0, numberOfToastsToCalculate - 1);
   const stackHeight = totalToastHeight + gapHeight + OUTSIDE_PRESS_PADDING;
 
-  // Position the pressable area outside the toast stack
   if (position === 'top-center') {
-    // For top position, pressable area is below the toast stack
     const topOffset = (insetValues.top || 40) + stackHeight;
     return {
       position: 'absolute',
@@ -92,7 +91,6 @@ export const calculateOutsidePressableArea = ({
   }
 
   if (position === 'bottom-center') {
-    // For bottom position, pressable area is above the toast stack
     const bottomOffset = (insetValues.bottom || 40) + stackHeight;
     return {
       position: 'absolute',
@@ -103,6 +101,5 @@ export const calculateOutsidePressableArea = ({
     };
   }
 
-  // No outside press for center position
   return { display: 'none' };
 };

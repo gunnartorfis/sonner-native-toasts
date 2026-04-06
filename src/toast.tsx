@@ -128,7 +128,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       numberOfToasts
     );
 
-    // Calculate absolute position for this toast
     const stackGap = toastDefaultValues.stackGap;
     const yPosition = useToastPosition({
       id,
@@ -155,9 +154,8 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       };
     }, [wiggleSharedValue]);
 
-    // ScaleX for stacking visual narrowing (replaces marginHorizontal to avoid
-    // layout-width changes that cause text rewrapping and height differences)
-    const screenWidth = Dimensions.get('window').width;
+    // ScaleX: visual narrowing avoids layout-width changes that cause text rewrap
+    const screenWidth = React.useMemo(() => Dimensions.get('window').width, []);
     const stackScaleX = useDerivedValue(() => {
       'worklet';
       if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
@@ -187,7 +185,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       screenWidth,
     ]);
 
-    // Absolute positioning style for toasts
     const absolutePositionStyle = useAnimatedStyle(() => {
       const base: Record<string, unknown> = {
         position: 'absolute',
@@ -262,7 +259,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       }
       const { height } = toastRef.current.getBoundingClientRect();
       toastStore.setToastHeight(id, height);
-    }, [id, index, numberOfToasts]);
+    }, [id]);
 
     const defaultStyles = useDefaultStyles({
       invert,
@@ -288,21 +285,15 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       },
       onBegin: () => {
         isDragging.current = true;
-        // Pause timer when dragging starts
         toastStore.pauseTimer(id);
       },
       onFinalize: () => {
         isDragging.current = false;
-        // Resume timer when dragging ends (only if not expanded)
         if (!isExpanded) {
           toastStore.resumeTimer(id);
         }
       },
       onPress: ({ x }: { x: number; y: number }) => {
-        // Only allow expanding/collapsing when:
-        // - Stacking is enabled and there are multiple toasts
-        // - Press is not near the close button area
-        // - Position is not center (no stacking for center)
         const pressToastPosition = position || positionCtx;
         if (
           enableStacking &&
@@ -312,7 +303,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         ) {
           toggleExpand();
         }
-        // Call user's onPress handler if provided
         onPress?.();
       },
       enabled: !promiseOptions && dismissible,

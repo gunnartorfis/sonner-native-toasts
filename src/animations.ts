@@ -79,7 +79,6 @@ export const getToastExiting = ({
 }: GetToastAnimationParams) => {
   'worklet';
 
-  // If toast is hidden by visibility limit, only fade out without sliding
   if (isHiddenByLimit) {
     const animations = {
       opacity: withTiming(0, {
