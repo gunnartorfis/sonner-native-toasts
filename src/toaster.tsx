@@ -15,6 +15,9 @@ import {
 import { toastStore } from './toast-store';
 const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
+const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
+const EMPTY_ICONS: NonNullable<ToasterProps['icons']> = {};
+
 export const Toaster: React.FC<ToasterProps> = ({
   ToasterOverlayWrapper,
   ...toasterProps
@@ -25,16 +28,18 @@ export const Toaster: React.FC<ToasterProps> = ({
     toastStore.getSnapshot
   );
 
-  const { toasts, shouldShowOverlay } = storeState;
+  const { toasts, shouldShowOverlay, toastHeights, isExpanded, toastHeightsVersion } = storeState;
+
+  const uiProps = { ...toasterProps, toasts, toastHeights, isExpanded, toastHeightsVersion };
 
   if (!shouldShowOverlay) {
-    return <ToasterUI {...toasterProps} toasts={toasts} />;
+    return <ToasterUI {...uiProps} />;
   }
 
   if (ToasterOverlayWrapper) {
     return (
       <ToasterOverlayWrapper>
-        <ToasterUI {...toasterProps} toasts={toasts} />
+        <ToasterUI {...uiProps} />
       </ToasterOverlayWrapper>
     );
   }
@@ -42,16 +47,26 @@ export const Toaster: React.FC<ToasterProps> = ({
   if (Platform.OS === 'ios') {
     return (
       <FullWindowOverlay>
-        <ToasterUI {...toasterProps} toasts={toasts} />
+        <ToasterUI {...uiProps} />
       </FullWindowOverlay>
     );
   }
 
-  return <ToasterUI {...toasterProps} toasts={toasts} />;
+  return <ToasterUI {...uiProps} />;
 };
 
-const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
+const ToasterUI: React.FC<
+  ToasterProps & {
+    toasts: ToastProps[];
+    toastHeights: Record<string | number, number>;
+    isExpanded: boolean;
+    toastHeightsVersion: number;
+  }
+> = ({
   toasts,
+  toastHeights,
+  isExpanded,
+  toastHeightsVersion,
   duration = toastDefaultValues.duration,
   position = toastDefaultValues.position,
   offset = toastDefaultValues.offset,
@@ -59,7 +74,7 @@ const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
   swipeToDismissDirection = toastDefaultValues.swipeToDismissDirection,
   closeButton,
   invert,
-  toastOptions = {},
+  toastOptions = EMPTY_TOAST_OPTIONS,
   icons,
   pauseWhenPageIsHidden,
   gap,
@@ -71,57 +86,65 @@ const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
   positionerStyle,
   ...props
 }) => {
+  React.useEffect(() => {
+    toastStore.setConfig({
+      autoWiggleOnUpdate,
+      visibleToasts,
+      duration,
+      pauseWhenPageIsHidden,
+    });
+  }, [autoWiggleOnUpdate, visibleToasts, duration, pauseWhenPageIsHidden]);
 
-  const storeState = React.useSyncExternalStore(
-    toastStore.subscribe,
-    toastStore.getSnapshot,
-    toastStore.getSnapshot
+  const value: ToasterContextType = React.useMemo(
+    () => ({
+      duration: duration ?? toastDefaultValues.duration,
+      position: position ?? toastDefaultValues.position,
+      offset: offset ?? toastDefaultValues.offset,
+      swipeToDismissDirection:
+        swipeToDismissDirection ?? toastDefaultValues.swipeToDismissDirection,
+      closeButton: closeButton ?? toastDefaultValues.closeButton,
+      unstyled: toastOptions.unstyled ?? toastDefaultValues.unstyled,
+      addToast: toastStore.addToast,
+      invert: invert ?? toastDefaultValues.invert,
+      icons: icons ?? EMPTY_ICONS,
+      pauseWhenPageIsHidden:
+        pauseWhenPageIsHidden ?? toastDefaultValues.pauseWhenPageIsHidden,
+      gap: gap ?? toastDefaultValues.gap,
+      theme: theme ?? toastDefaultValues.theme,
+      toastOptions,
+      autoWiggleOnUpdate:
+        autoWiggleOnUpdate ?? toastDefaultValues.autoWiggleOnUpdate,
+      richColors: richColors ?? toastDefaultValues.richColors,
+      enableStacking: enableStacking ?? toastDefaultValues.enableStacking,
+      visibleToasts: visibleToasts ?? toastDefaultValues.visibleToasts,
+      toastHeights,
+      toastHeightsVersion,
+      isExpanded,
+      expand: toastStore.expand,
+      collapse: toastStore.collapse,
+      toggleExpand: toastStore.toggleExpand,
+    }),
+    [
+      duration,
+      position,
+      offset,
+      swipeToDismissDirection,
+      closeButton,
+      toastOptions,
+      invert,
+      icons,
+      pauseWhenPageIsHidden,
+      gap,
+      theme,
+      autoWiggleOnUpdate,
+      richColors,
+      enableStacking,
+      visibleToasts,
+      toastHeights,
+      toastHeightsVersion,
+      isExpanded,
+    ]
   );
-
-  const { toastHeights, isExpanded } = storeState;
-
-  // Sync store config on every render so it's available immediately
-  toastStore.setConfig({
-    autoWiggleOnUpdate,
-    visibleToasts,
-    duration,
-    pauseWhenPageIsHidden,
-  });
-
-  const dismissToast: (
-    id: string | number | undefined,
-    origin?: 'onDismiss' | 'onAutoClose'
-  ) => string | number | undefined = (id, origin) => {
-    return toastStore.dismissToast(id, origin);
-  };
-
-  const value: ToasterContextType = {
-    duration: duration ?? toastDefaultValues.duration,
-    position: position ?? toastDefaultValues.position,
-    offset: offset ?? toastDefaultValues.offset,
-    swipeToDismissDirection:
-      swipeToDismissDirection ?? toastDefaultValues.swipeToDismissDirection,
-    closeButton: closeButton ?? toastDefaultValues.closeButton,
-    unstyled: toastOptions.unstyled ?? toastDefaultValues.unstyled,
-    addToast: toastStore.addToast,
-    invert: invert ?? toastDefaultValues.invert,
-    icons: icons ?? {},
-    pauseWhenPageIsHidden:
-      pauseWhenPageIsHidden ?? toastDefaultValues.pauseWhenPageIsHidden,
-    gap: gap ?? toastDefaultValues.gap,
-    theme: theme ?? toastDefaultValues.theme,
-    toastOptions,
-    autoWiggleOnUpdate:
-      autoWiggleOnUpdate ?? toastDefaultValues.autoWiggleOnUpdate,
-    richColors: richColors ?? toastDefaultValues.richColors,
-    enableStacking: enableStacking ?? toastDefaultValues.enableStacking,
-    visibleToasts: visibleToasts ?? toastDefaultValues.visibleToasts,
-    toastHeights,
-    isExpanded,
-    expand: toastStore.expand,
-    collapse: toastStore.collapse,
-    toggleExpand: toastStore.toggleExpand,
-  };
   const orderToastsFromPosition: (args: {
     currentToasts: ToastProps[];
     enableStacking: boolean;
@@ -138,17 +161,17 @@ const ToasterUI: React.FC<ToasterProps & { toasts: ToastProps[] }> = ({
       : currentToasts.slice().reverse();
   };
 
-  const onDismiss: NonNullable<
-    React.ComponentProps<typeof Toast>['onDismiss']
-  > = (id) => {
-    dismissToast(id, 'onDismiss');
-  };
+  const onDismiss = React.useCallback<
+    NonNullable<React.ComponentProps<typeof Toast>['onDismiss']>
+  >((id) => {
+    toastStore.dismissToast(id, 'onDismiss');
+  }, []);
 
-  const onAutoClose: NonNullable<
-    React.ComponentProps<typeof Toast>['onDismiss']
-  > = (id) => {
-    dismissToast(id, 'onAutoClose');
-  };
+  const onAutoClose = React.useCallback<
+    NonNullable<React.ComponentProps<typeof Toast>['onDismiss']>
+  >((id) => {
+    toastStore.dismissToast(id, 'onAutoClose');
+  }, []);
 
   const possiblePositions = allPositions.filter((possiblePossition) => {
     return (

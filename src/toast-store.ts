@@ -18,6 +18,7 @@ type ToastStoreState = {
   shouldShowOverlay: boolean;
   toastTimers: Record<string | number, ToastTimer>;
   toastHeights: Record<string | number, number>;
+  toastHeightsVersion: number;
   isExpanded: boolean;
 };
 
@@ -38,6 +39,7 @@ class ToastStore {
     shouldShowOverlay: false,
     toastTimers: {},
     toastHeights: {},
+    toastHeightsVersion: 0,
     isExpanded: false,
   };
 
@@ -341,6 +343,7 @@ class ToastStore {
         toastsCounter: 1,
         toastTimers: {},
         toastHeights: {},
+        toastHeightsVersion: this.state.toastHeightsVersion + 1,
         isExpanded: false,
       };
       this.scheduleHideOverlay();
@@ -371,6 +374,7 @@ class ToastStore {
       ...this.state,
       toasts: filteredToasts,
       toastHeights: updatedHeights,
+      toastHeightsVersion: this.state.toastHeightsVersion + 1,
       isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
     };
 
@@ -450,6 +454,7 @@ class ToastStore {
         ...this.state.toastHeights,
         [id]: height,
       },
+      toastHeightsVersion: this.state.toastHeightsVersion + 1,
     };
     this.notify();
   };

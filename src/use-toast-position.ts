@@ -15,6 +15,7 @@ export const useToastPosition = ({
   orderedToastIds,
   isExpanded,
   stackGap,
+  toastHeightsVersion,
 }: {
   id: string | number;
   index: number;
@@ -26,10 +27,9 @@ export const useToastPosition = ({
   orderedToastIds: Array<string | number>;
   isExpanded: boolean;
   stackGap: number;
+  toastHeightsVersion: number;
 }) => {
-  // Serialize to stable dep keys so useDerivedValue doesn't re-run on same-content new refs
   const orderedIdsKey = orderedToastIds.join(',');
-  const heightsKey = JSON.stringify(allToastHeights);
 
   const yPosition = useDerivedValue(() => {
     'worklet';
@@ -56,7 +56,7 @@ export const useToastPosition = ({
     numberOfToasts,
     enableStacking,
     position,
-    heightsKey,
+    toastHeightsVersion,
     gap,
     orderedIdsKey,
     isExpanded,

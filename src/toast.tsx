@@ -1,11 +1,11 @@
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Pressable,
   Text,
   View,
   type ViewProps,
-  useWindowDimensions,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -72,6 +72,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       richColors: richColorsCtx,
       enableStacking,
       toastHeights,
+      toastHeightsVersion,
       gap,
       position: positionCtx,
       isExpanded,
@@ -107,7 +108,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     const closeButton = closeButtonProps ?? closeButtonCtx;
     const backgroundComponent =
       backgroundComponentProps ?? backgroundComponentCtx;
-    const { width: windowWidth } = useWindowDimensions();
 
     // Determine if this toast should be hidden due to visibility limit
     const isHiddenByLimit =
@@ -135,6 +135,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       orderedToastIds,
       isExpanded,
       stackGap,
+      toastHeightsVersion,
     });
 
     const isDragging = React.useRef(false);
@@ -301,7 +302,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         if (
           enableStacking &&
           numberOfToasts > 1 &&
-          !isPressNearCloseButton({ x, viewWidth: windowWidth }) &&
+          !isPressNearCloseButton({ x, viewWidth: Dimensions.get('window').width }) &&
           pressToastPosition !== 'center'
         ) {
           toggleExpand();

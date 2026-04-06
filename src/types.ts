@@ -189,6 +189,7 @@ export type ToasterContextType = Required<
 > & {
   addToast: AddToastContextHandler;
   toastHeights: Record<string | number, number>;
+  toastHeightsVersion: number;
   isExpanded: boolean;
   expand: () => void;
   collapse: () => void;
