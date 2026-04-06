@@ -147,15 +147,15 @@ class ToastStore {
   };
 
   pauseAllTimers = () => {
-    Object.keys(this.state.toastTimers).forEach((id) => {
-      this.pauseTimer(id);
-    });
+    for (const toast of this.state.toastsById.values()) {
+      this.pauseTimer(toast.id);
+    }
   };
 
   resumeAllTimers = () => {
-    Object.keys(this.state.toastTimers).forEach((id) => {
-      this.resumeTimer(id);
-    });
+    for (const toast of this.state.toastsById.values()) {
+      this.resumeTimer(toast.id);
+    }
   };
 
   private handlePromise = async (toast: ToastProps) => {

@@ -32,7 +32,7 @@ export const useDefaultStyles = ({
 }): DefaultStyles => {
   const colors = useColors(invert);
   const variant = variantProps === 'loading' ? 'info' : variantProps;
-  const hasDescription = description?.length !== 0;
+  const hasDescription = !!description;
 
   return useMemo(() => {
     if (unstyled) {
