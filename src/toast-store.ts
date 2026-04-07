@@ -138,7 +138,6 @@ class ToastStore {
 
     timer.timeout = setTimeout(
       () => {
-        toast.onAutoClose?.(id);
         this.dismissToast(id, 'onAutoClose');
         delete this.state.toastTimers[id];
       },
@@ -268,7 +267,6 @@ class ToastStore {
           id,
           duration,
           onComplete: () => {
-            newToast.onAutoClose?.(id);
             this.dismissToast(id, 'onAutoClose');
           },
         });
@@ -315,7 +313,6 @@ class ToastStore {
           id,
           duration,
           onComplete: () => {
-            newToast.onAutoClose?.(id);
             this.dismissToast(id, 'onAutoClose');
           },
         });
@@ -438,7 +435,6 @@ class ToastStore {
         duration:
           toast.duration ?? this.config.duration ?? toastDefaultValues.duration,
         onComplete: () => {
-          toast.onAutoClose?.(id);
           this.dismissToast(id, 'onAutoClose');
         },
       });
