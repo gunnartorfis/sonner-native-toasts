@@ -71,12 +71,8 @@ class ToastStore {
     this.subscribers.forEach((callback) => callback());
   };
 
-  private rebuildIndex = (toasts: ToastProps[]): Map<string | number, ToastProps> => {
-    const map = new Map<string | number, ToastProps>();
-    for (const toast of toasts) {
-      map.set(toast.id, toast);
-    }
-    return map;
+  private cloneIndex = (): Map<string | number, ToastProps> => {
+    return new Map(this.state.toastsById);
   };
 
   private startTimer = ({
@@ -272,10 +268,14 @@ class ToastStore {
         });
       }
 
+      const updatedIndex = this.cloneIndex();
+      const updatedEntry = updatedToasts.find((t) => t.id === options.id);
+      if (updatedEntry) updatedIndex.set(options.id!, updatedEntry);
+
       this.state = {
         ...this.state,
         toasts: updatedToasts,
-        toastsById: this.rebuildIndex(updatedToasts),
+        toastsById: updatedIndex,
         shouldShowOverlay: true,
       };
     } else {
@@ -288,12 +288,15 @@ class ToastStore {
 
       const visibleToasts =
         this.config.visibleToasts ?? toastDefaultValues.visibleToasts;
+      const newIndex = this.cloneIndex();
+      newIndex.set(newToast.id, newToast);
       const updatedHeights = { ...this.state.toastHeights };
       let heightsChanged = false;
       if (newToasts.length > visibleToasts) {
         const removedToast = newToasts.shift();
         if (removedToast) {
           this.clearTimer(removedToast.id);
+          newIndex.delete(removedToast.id);
           if (removedToast.id in updatedHeights) {
             delete updatedHeights[removedToast.id];
             heightsChanged = true;
@@ -304,7 +307,7 @@ class ToastStore {
       this.state = {
         ...this.state,
         toasts: newToasts,
-        toastsById: this.rebuildIndex(newToasts),
+        toastsById: newIndex,
         toastRefs: newToastRefs,
         toastHeights: heightsChanged ? updatedHeights : this.state.toastHeights,
         toastHeightsVersion: heightsChanged
@@ -382,10 +385,13 @@ class ToastStore {
     const shouldAutoCollapse =
       filteredToasts.length <= 1 && this.state.isExpanded;
 
+    const updatedIndex = this.cloneIndex();
+    updatedIndex.delete(id);
+
     this.state = {
       ...this.state,
       toasts: filteredToasts,
-      toastsById: this.rebuildIndex(filteredToasts),
+      toastsById: updatedIndex,
       toastHeights: updatedHeights,
       toastHeightsVersion: this.state.toastHeightsVersion + 1,
       isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
