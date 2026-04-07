@@ -245,7 +245,7 @@ class ToastStore {
         (this.config.autoWiggleOnUpdate === 'toast-change' &&
           !areToastsEqual(newToast, existingToast));
 
-      if (shouldWiggle && options.id) {
+      if (shouldWiggle && options.id !== undefined) {
         this.wiggleToast(options.id);
       }
 
