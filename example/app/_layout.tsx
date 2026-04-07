@@ -1,39 +1,106 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '../hooks/useColorScheme';
-import { Toaster } from 'sonner-native';
+import * as React from 'react';
+import { Pressable, Text, useColorScheme } from 'react-native';
+import { Stack, useGlobalSearchParams, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  Toaster,
+  type AutoWiggle,
+  type ToastPosition,
+  type ToastSwipeDirection,
+  type ToastTheme,
+} from 'sonner-native';
 
-export default function RootLayout() {
+const RootLayout: React.FC = () => {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const router = useRouter();
+  const params = useGlobalSearchParams<{
+    stacking?: string;
+    position?: string;
+    theme?: string;
+    swipeDirection?: string;
+    closeButton?: string;
+    visibleToasts?: string;
+    autoWiggle?: string;
+    richColors?: string;
+    invert?: string;
+  }>();
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  const position = (params.position as ToastPosition) || 'top-center';
+  const stackingEnabled = params.stacking !== 'false';
+  const theme = (params.theme as ToastTheme) || 'system';
+  const swipeDirection =
+    (params.swipeDirection as ToastSwipeDirection) || 'up';
+  const closeButton = params.closeButton !== 'false';
+  const visibleToasts = parseInt(params.visibleToasts || '4', 10);
+  const autoWiggle = (params.autoWiggle as AutoWiggle) || 'toast-change';
+  const richColors = params.richColors === 'true';
+  const invert = params.invert === 'true';
 
   return (
-    <GestureHandlerRootView>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="+not-found" />
+          <Stack.Screen
+            name="index"
+            options={{
+              title: 'Toasts',
+              headerRight: () => (
+                <Pressable
+                  onPress={() => router.push('/modal')}
+                  hitSlop={8}
+                >
+                  <Text
+                    style={{
+                      color:
+                        colorScheme === 'dark' ? '#0A84FF' : '#007AFF',
+                      fontSize: 17,
+                    }}
+                  >
+                    Modal
+                  </Text>
+                </Pressable>
+              ),
+            }}
+          />
+          <Stack.Screen
+            name="(tabs)"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="modal"
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              title: 'Modal',
+            }}
+          />
         </Stack>
-        <StatusBar style="auto" />
-        <Toaster />
-      </ThemeProvider>
-    </GestureHandlerRootView>
+        <Toaster
+          position={position}
+          duration={30000}
+          swipeToDismissDirection={swipeDirection}
+          visibleToasts={visibleToasts}
+          closeButton={closeButton}
+          autoWiggleOnUpdate={autoWiggle}
+          theme={theme}
+          enableStacking={stackingEnabled}
+          richColors={richColors}
+          invert={invert}
+          icons={{
+            error: <Text>💥</Text>,
+            loading: <Text>🔄</Text>,
+          }}
+          toastOptions={{
+            actionButtonStyle: {
+              paddingHorizontal: 20,
+            },
+          }}
+          pauseWhenPageIsHidden
+        />
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
-}
+};
+
+export default RootLayout;
