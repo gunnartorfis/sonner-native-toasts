@@ -2,11 +2,10 @@ import { isToastAction, type ToastProps } from './types';
 
 const areActionsEqual = (a: ToastProps['action'], b: ToastProps['action']) => {
   if (isToastAction(a) && isToastAction(b)) {
-    if (a.label !== b.label) return false;
-    return true;
+    return a.label === b.label;
   }
 
-  return true;
+  return a === b;
 };
 
 export const areToastsEqual = (a: ToastProps, b: ToastProps) => {
@@ -19,6 +18,14 @@ export const areToastsEqual = (a: ToastProps, b: ToastProps) => {
     a.invert === b.invert &&
     a.position === b.position &&
     a.dismissible === b.dismissible &&
+    a.icon === b.icon &&
+    a.jsx === b.jsx &&
+    a.duration === b.duration &&
+    a.style === b.style &&
+    a.styles === b.styles &&
+    a.important === b.important &&
+    a.richColors === b.richColors &&
+    a.promiseOptions === b.promiseOptions &&
     areActionsEqual(a.action, b.action) &&
     areActionsEqual(a.cancel, b.cancel)
   );

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Pressable,
   Text,
   View,
@@ -8,21 +9,39 @@ import {
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { useToastLayoutAnimations } from './animations';
+import { STACKING_ANIMATION_DURATION, useToastLayoutAnimations } from './animations';
 import { toastDefaultValues } from './constants';
-import { useToastContext } from './context';
+import { useDynamicToastContext, useToastContext } from './context';
+import { easeOutQuartFn } from './easings';
 import { ToastSwipeHandler } from './gestures';
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from './icons';
+import { isPressNearCloseButton } from './press-utils';
 import { toastStore } from './toast-store';
-import { isToastAction, type ToastProps, type ToastRef } from './types';
+import {
+  isToastAction,
+  type ToastProps,
+  type ToastRef,
+  type ToastStyles,
+} from './types';
 import { useAppStateListener } from './use-app-state';
-import { useDefaultStyles, type DefaultStyles } from './use-default-styles';
+import {
+  useDefaultStyles,
+  useIconColor,
+  type DefaultStyles,
+} from './use-default-styles';
+import { useToastPosition } from './use-toast-position';
 
-export const Toast = React.forwardRef<ToastRef, ToastProps>(
+type ToastInternalProps = ToastProps & {
+  parentStyle?: ToastProps['style'];
+  parentStyles?: ToastStyles;
+};
+
+export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
   (
     {
       id,
@@ -44,6 +63,8 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       cancelButtonTextStyle,
       style,
       styles,
+      parentStyle,
+      parentStyles,
       promiseOptions,
       position,
       unstyled: unstyledProps,
@@ -51,6 +72,10 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       invert: invertProps,
       richColors: richColorsProps,
       onPress,
+      backgroundComponent: backgroundComponentProps,
+      numberOfToasts,
+      index,
+      orderedToastIds,
     },
     ref
   ) => {
@@ -61,6 +86,10 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       pauseWhenPageIsHidden,
       invert: invertCtx,
       richColors: richColorsCtx,
+      enableStacking,
+      gap,
+      position: positionCtx,
+      visibleToasts: visibleToastsCtx,
       toastOptions: {
         unstyled: unstyledCtx,
         toastContainerStyle: toastContainerStyleCtx,
@@ -70,22 +99,95 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         cancelButtonTextStyle: cancelButtonTextStyleCtx,
         style: toastStyleCtx,
         toastContentStyle: toastContentStyleCtx,
+        textContainerStyle: textContainerStyleCtx,
         titleStyle: titleStyleCtx,
         descriptionStyle: descriptionStyleCtx,
         buttonsStyle: buttonsStyleCtx,
         closeButtonStyle: closeButtonStyleCtx,
         closeButtonIconStyle: closeButtonIconStyleCtx,
+        backgroundComponent: backgroundComponentCtx,
+        success: successStyleCtx,
+        error: errorStyleCtx,
+        warning: warningStyleCtx,
+        info: infoStyleCtx,
+        loading: loadingStyleCtx,
       },
     } = useToastContext();
+    const {
+      toastHeights,
+      toastHeightsVersion,
+      isExpanded,
+      toggleExpand,
+    } = useDynamicToastContext();
     const invert = invertProps ?? invertCtx;
     const richColors = richColorsProps ?? richColorsCtx;
     const unstyled = unstyledProps ?? unstyledCtx;
     const duration = durationProps ?? durationCtx;
     const closeButton = closeButtonProps ?? closeButtonCtx;
+    const backgroundComponent =
+      backgroundComponentProps ?? backgroundComponentCtx;
 
-    const { entering, exiting } = useToastLayoutAnimations(position);
+    const mergedStyle = React.useMemo(
+      () =>
+        parentStyle || style
+          ? { ...parentStyle, ...style }
+          : undefined,
+      [parentStyle, style]
+    );
+    const mergedStyles = React.useMemo(
+      () => {
+        if (!parentStyles && !styles) return undefined;
+        return {
+          toastContainer: { ...parentStyles?.toastContainer, ...styles?.toastContainer },
+          toast: { ...parentStyles?.toast, ...styles?.toast },
+          toastContent: { ...parentStyles?.toastContent, ...styles?.toastContent },
+          textContainer: { ...parentStyles?.textContainer, ...styles?.textContainer },
+          title: { ...parentStyles?.title, ...styles?.title },
+          description: { ...parentStyles?.description, ...styles?.description },
+          buttons: { ...parentStyles?.buttons, ...styles?.buttons },
+          closeButton: { ...parentStyles?.closeButton, ...styles?.closeButton },
+          closeButtonIcon: { ...parentStyles?.closeButtonIcon, ...styles?.closeButtonIcon },
+        };
+      },
+      [parentStyles, styles]
+    );
+
+    const toastPosition = position ?? positionCtx;
+
+    // Determine if this toast should be hidden due to visibility limit
+    // For top-center (reversed array), front = index 0; for others, front = highest index
+    const distanceFromFront =
+      toastPosition === 'top-center'
+        ? index
+        : numberOfToasts - 1 - index;
+    const isHiddenByLimit =
+      enableStacking &&
+      distanceFromFront >=
+        (visibleToastsCtx ?? toastDefaultValues.visibleToasts);
+
+    const { entering, exiting } = useToastLayoutAnimations(
+      position,
+      isHiddenByLimit,
+      numberOfToasts
+    );
+
+    const stackGap = toastDefaultValues.stackGap;
+    const yPosition = useToastPosition({
+      id,
+      index,
+      numberOfToasts,
+      enableStacking,
+      position: toastPosition,
+      allToastHeights: toastHeights,
+      gap,
+      orderedToastIds,
+      isExpanded,
+      stackGap,
+      toastHeightsVersion,
+    });
 
     const isDragging = React.useRef(false);
+    const toastRef = React.useRef<View & { getBoundingClientRect(): DOMRect }>(null);
 
     const wiggleSharedValue = useSharedValue(1);
 
@@ -95,10 +197,57 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       };
     }, [wiggleSharedValue]);
 
-    const wiggle = () => {
+    // ScaleX: visual narrowing avoids layout-width changes that cause text rewrap
+    const screenWidth = Dimensions.get('window').width;
+    const stackScaleX = useDerivedValue(() => {
+      'worklet';
+      if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
+        return withTiming(1, {
+          duration: STACKING_ANIMATION_DURATION,
+          easing: easeOutQuartFn,
+        });
+      }
+
+      const multiplier =
+        toastPosition === 'top-center' || toastPosition === 'center'
+          ? index
+          : numberOfToasts - index - 1;
+      const narrowAmount = stackGap * multiplier * 2;
+      const scale = Math.max(0.8, 1 - narrowAmount / screenWidth);
+      return withTiming(scale, {
+        duration: STACKING_ANIMATION_DURATION,
+        easing: easeOutQuartFn,
+      });
+    }, [
+      enableStacking,
+      numberOfToasts,
+      index,
+      toastPosition,
+      isExpanded,
+      stackGap,
+      screenWidth,
+    ]);
+
+    const absolutePositionStyle = useAnimatedStyle(() => {
+      const base: Record<string, unknown> = {
+        position: 'absolute',
+        width: '100%',
+        transform: [
+          { translateY: yPosition.value },
+          { scaleX: stackScaleX.value },
+        ],
+      };
+      if (toastPosition === 'bottom-center') {
+        base.bottom = 0;
+      } else {
+        base.top = 0;
+      }
+      return base;
+    }, [yPosition, toastPosition, stackScaleX]);
+
+    const wiggle = React.useCallback(() => {
       'worklet';
 
-      // eslint-disable-next-line react-hooks/immutability
       wiggleSharedValue.value = withRepeat(
         withTiming(Math.min(wiggleSharedValue.value * 1.035, 1.035), {
           duration: 150,
@@ -106,9 +255,9 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         4,
         true
       );
-    };
+    }, [wiggleSharedValue]);
 
-    const wiggleHandler = () => {
+    const wiggleHandler = React.useCallback(() => {
       // we can't send Infinity over to the native layer.
       if (duration === Infinity) {
         return;
@@ -116,18 +265,16 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
 
       if (wiggleSharedValue.value !== 1) {
         // we should animate back to 1 and then wiggle
-        // eslint-disable-next-line react-hooks/immutability
         wiggleSharedValue.value = withTiming(1, { duration: 150 }, wiggle);
       } else {
         wiggle();
       }
-    };
+    }, [wiggle, wiggleSharedValue, duration]);
 
     React.useImperativeHandle(ref, () => ({
       wiggle: wiggleHandler,
     }));
 
-    // Handle app state changes - pause/resume timers
     const onBackground = React.useCallback(() => {
       if (!pauseWhenPageIsHidden) {
         return;
@@ -147,7 +294,15 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       onForeground,
     });
 
-    // Note: Timer and promise handling is now managed by the store
+    // Synchronous layout read via New Architecture's getBoundingClientRect.
+    // Runs during commit so positions resolve in the same frame.
+    React.useLayoutEffect(() => {
+      if (!toastRef.current) {
+        return;
+      }
+      const { height } = toastRef.current.getBoundingClientRect();
+      toastStore.setToastHeight(id, height);
+    }, [id, variant, title, description, jsx]);
 
     const defaultStyles = useDefaultStyles({
       invert,
@@ -157,59 +312,139 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       variant,
     });
 
-    const toastSwipeHandlerProps = {
-      onRemove: () => {
-        onDismiss?.(id);
-      },
-      onBegin: () => {
-        isDragging.current = true;
-        // Pause timer when dragging starts
-        toastStore.pauseTimer(id);
-      },
-      onFinalize: () => {
-        isDragging.current = false;
-        // Resume timer when dragging ends
+    const variantStyle =
+      variant === 'success' ? successStyleCtx :
+      variant === 'error' ? errorStyleCtx :
+      variant === 'warning' ? warningStyleCtx :
+      variant === 'info' ? infoStyleCtx :
+      loadingStyleCtx;
+
+    const onRemove = React.useCallback(() => {
+      onDismiss?.(id);
+    }, [onDismiss, id]);
+
+    const onSwipeBegin = React.useCallback(() => {
+      isDragging.current = true;
+      toastStore.pauseTimer(id);
+    }, [id]);
+
+    const onSwipeFinalize = React.useCallback(() => {
+      isDragging.current = false;
+      if (!isExpanded) {
         toastStore.resumeTimer(id);
+      }
+    }, [id, isExpanded]);
+
+    const onSwipePress = React.useCallback(
+      ({ x }: { x: number; y: number }) => {
+        const pressToastPosition = position || positionCtx;
+        if (
+          enableStacking &&
+          numberOfToasts > 1 &&
+          !isPressNearCloseButton({
+            x,
+            viewWidth: Dimensions.get('window').width,
+          }) &&
+          pressToastPosition !== 'center'
+        ) {
+          toggleExpand();
+        }
+        onPress?.();
       },
-      onPress: () => onPress?.(),
-      enabled: !promiseOptions && dismissible,
-      style: [toastContainerStyleCtx, styles?.toastContainer],
-      unstyled: unstyled,
-      important: important,
-      position: position,
-    };
+      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress]
+    );
+
+    const toastSwipeHandlerProps = React.useMemo(
+      () => ({
+        onRemove,
+        onBegin: onSwipeBegin,
+        onFinalize: onSwipeFinalize,
+        onPress: onSwipePress,
+        enabled: !promiseOptions && dismissible,
+        style: [toastContainerStyleCtx, mergedStyles?.toastContainer],
+        unstyled,
+        important,
+        position,
+        numberOfToasts,
+      }),
+      [
+        onRemove,
+        onSwipeBegin,
+        onSwipeFinalize,
+        onSwipePress,
+        promiseOptions,
+        dismissible,
+        toastContainerStyleCtx,
+        mergedStyles?.toastContainer,
+        unstyled,
+        important,
+        position,
+        numberOfToasts,
+      ]
+    );
 
     if (jsx) {
       return (
-        <ToastSwipeHandler {...toastSwipeHandlerProps}>
-          <Animated.View entering={entering} exiting={exiting}>
-            {jsx}
+        <ToastSwipeHandler {...toastSwipeHandlerProps} index={index}>
+          <Animated.View style={absolutePositionStyle}>
+            <Animated.View
+              ref={toastRef}
+
+              entering={entering}
+              exiting={exiting}
+            >
+              {jsx}
+            </Animated.View>
           </Animated.View>
         </ToastSwipeHandler>
       );
     }
 
+    const backgroundComponentStyle = backgroundComponent
+      ? {
+          overflow: 'hidden' as const,
+          backgroundColor: 'transparent',
+        }
+      : undefined;
+
+    const contentContainerStyle = backgroundComponent
+      ? { position: 'relative' as const, zIndex: 1 }
+      : undefined;
+
     return (
-      <ToastSwipeHandler {...toastSwipeHandlerProps}>
-        <Animated.View style={wiggleAnimationStyle}>
+      <ToastSwipeHandler
+        {...toastSwipeHandlerProps}
+        index={index}
+        numberOfToasts={numberOfToasts}
+      >
+        <Animated.View style={absolutePositionStyle}>
           <Animated.View
-            style={[
-              unstyled ? undefined : elevationStyle,
-              defaultStyles.toast,
-              toastStyleCtx,
-              styles?.toast,
-              style,
-            ]}
-            entering={entering}
-            exiting={exiting}
+            style={wiggleAnimationStyle}
           >
-            <View
+            <Animated.View
+              ref={toastRef}
+
               style={[
-                defaultStyles.toastContent,
-                toastContentStyleCtx,
-                styles?.toastContent,
+                unstyled ? undefined : elevationStyle,
+                defaultStyles.toast,
+                toastStyleCtx,
+                variantStyle,
+                mergedStyles?.toast,
+                mergedStyle,
+                backgroundComponentStyle,
               ]}
+              entering={entering}
+              exiting={exiting}
             >
+              {backgroundComponent}
+              <View
+                style={[
+                  defaultStyles.toastContent,
+                  toastContentStyleCtx,
+                  mergedStyles?.toastContent,
+                  contentContainerStyle,
+                ]}
+              >
               {promiseOptions || variant === 'loading' ? (
                 'loading' in icons ? (
                   icons.loading
@@ -227,9 +462,15 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                   richColors={richColors}
                 />
               )}
-              <View style={{ flex: 1 }}>
+              <View
+                style={[
+                  { flex: 1 },
+                  textContainerStyleCtx,
+                  mergedStyles?.textContainer,
+                ]}
+              >
                 <Text
-                  style={[defaultStyles.title, titleStyleCtx, styles?.title]}
+                  style={[defaultStyles.title, titleStyleCtx, mergedStyles?.title]}
                 >
                   {title}
                 </Text>
@@ -238,7 +479,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                     style={[
                       defaultStyles.description,
                       descriptionStyleCtx,
-                      styles?.description,
+                      mergedStyles?.description,
                     ]}
                   >
                     {description}
@@ -250,7 +491,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                       ? undefined
                       : defaultStyles.buttons,
                     buttonsStyleCtx,
-                    styles?.buttons,
+                    mergedStyles?.buttons,
                   ]}
                 >
                   {isToastAction(action) ? (
@@ -302,22 +543,23 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                   ) : (
                     cancel || undefined
                   )}
+                  </View>
                 </View>
+                <CloseButton
+                  dismissible={dismissible}
+                  close={close}
+                  closeButton={closeButton}
+                  onDismiss={onDismiss}
+                  id={id}
+                  closeButtonStyle={[closeButtonStyleCtx, mergedStyles?.closeButton]}
+                  closeButtonIconStyle={[
+                    closeButtonIconStyleCtx,
+                    mergedStyles?.closeButtonIcon,
+                  ]}
+                  defaultStyles={defaultStyles}
+                />
               </View>
-              <CloseButton
-                dismissible={dismissible}
-                close={close}
-                closeButton={closeButton}
-                onDismiss={onDismiss}
-                id={id}
-                closeButtonStyle={[closeButtonStyleCtx, styles?.closeButton]}
-                closeButtonIconStyle={[
-                  closeButtonIconStyleCtx,
-                  styles?.closeButtonIcon,
-                ]}
-                defaultStyles={defaultStyles}
-              />
-            </View>
+            </Animated.View>
           </Animated.View>
         </Animated.View>
       </ToastSwipeHandler>
@@ -333,13 +575,7 @@ export const ToastIcon: React.FC<
     richColors: boolean;
   }
 > = ({ variant, invert, richColors }) => {
-  const color = useDefaultStyles({
-    variant,
-    invert,
-    richColors,
-    unstyled: false,
-    description: undefined,
-  }).iconColor;
+  const color = useIconColor({ variant, invert, richColors });
 
   switch (variant) {
     case 'success':
