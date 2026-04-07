@@ -302,7 +302,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       }
       const { height } = toastRef.current.getBoundingClientRect();
       toastStore.setToastHeight(id, height);
-    }, [id]);
+    }, [id, variant, title, description]);
 
     const defaultStyles = useDefaultStyles({
       invert,

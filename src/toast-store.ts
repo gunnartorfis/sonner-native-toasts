@@ -237,7 +237,7 @@ class ToastStore {
 
     const existingToast = this.state.toastsById.get(newToast.id);
 
-    const shouldUpdate = existingToast && options?.id;
+    const shouldUpdate = existingToast && options?.id !== undefined;
 
     if (shouldUpdate) {
       const shouldWiggle =
@@ -342,7 +342,7 @@ class ToastStore {
     id: string | number | undefined,
     origin?: 'onDismiss' | 'onAutoClose'
   ): string | number | undefined => {
-    if (!id) {
+    if (id == null) {
       this.state.toasts.forEach((currentToast) => {
         this.clearTimer(currentToast.id);
         if (origin === 'onDismiss') {
