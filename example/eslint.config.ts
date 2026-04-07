@@ -2,7 +2,8 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
-if (!reactHooks.configs.flat.recommended) {
+const flatConfigs = (reactHooks.configs as Record<string, unknown>).flat as Record<string, unknown> | undefined;
+if (!flatConfigs?.recommended) {
   throw new Error('reactHooks.configs.flat.recommended is not defined');
 }
 
@@ -24,7 +25,8 @@ export default defineConfig([
     'tailwind.config.js',
   ]),
   tseslint.configs.recommended,
-  reactHooks.configs.flat.recommended,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  flatConfigs.recommended as any,
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
