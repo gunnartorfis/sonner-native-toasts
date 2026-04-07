@@ -288,10 +288,16 @@ class ToastStore {
 
       const visibleToasts =
         this.config.visibleToasts ?? toastDefaultValues.visibleToasts;
+      const updatedHeights = { ...this.state.toastHeights };
+      let heightsChanged = false;
       if (newToasts.length > visibleToasts) {
         const removedToast = newToasts.shift();
         if (removedToast) {
           this.clearTimer(removedToast.id);
+          if (removedToast.id in updatedHeights) {
+            delete updatedHeights[removedToast.id];
+            heightsChanged = true;
+          }
         }
       }
 
@@ -300,6 +306,10 @@ class ToastStore {
         toasts: newToasts,
         toastsById: this.rebuildIndex(newToasts),
         toastRefs: newToastRefs,
+        toastHeights: heightsChanged ? updatedHeights : this.state.toastHeights,
+        toastHeightsVersion: heightsChanged
+          ? this.state.toastHeightsVersion + 1
+          : this.state.toastHeightsVersion,
         toastsCounter: nextCounter,
         shouldShowOverlay: true,
       };
