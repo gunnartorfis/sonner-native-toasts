@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { useDerivedValue, withTiming } from 'react-native-reanimated';
-import { ANIMATION_DURATION } from './animations';
+import { STACKING_ANIMATION_DURATION } from './animations';
 import { easeOutQuartFn } from './easings';
 import { calculateToastPosition } from './position-utils';
 import type { ToastPosition } from './types';
@@ -15,6 +16,7 @@ export const useToastPosition = ({
   orderedToastIds,
   isExpanded,
   stackGap,
+  toastHeightsVersion,
 }: {
   id: string | number;
   index: number;
@@ -26,7 +28,13 @@ export const useToastPosition = ({
   orderedToastIds: Array<string | number>;
   isExpanded: boolean;
   stackGap: number;
+  toastHeightsVersion: number;
 }) => {
+  const orderedIdsKey = useMemo(
+    () => orderedToastIds.join(','),
+    [orderedToastIds]
+  );
+
   const yPosition = useDerivedValue(() => {
     'worklet';
 
@@ -43,7 +51,7 @@ export const useToastPosition = ({
     });
 
     return withTiming(calculatedPosition, {
-      duration: ANIMATION_DURATION,
+      duration: STACKING_ANIMATION_DURATION,
       easing: easeOutQuartFn,
     });
   }, [
@@ -52,9 +60,9 @@ export const useToastPosition = ({
     numberOfToasts,
     enableStacking,
     position,
-    allToastHeights,
+    toastHeightsVersion,
     gap,
-    orderedToastIds,
+    orderedIdsKey,
     isExpanded,
     stackGap,
   ]);

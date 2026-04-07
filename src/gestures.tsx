@@ -49,7 +49,6 @@ export const ToastSwipeHandler: React.FC<
   const translate = useSharedValue(0);
   const {
     swipeToDismissDirection: direction,
-    gap,
     position: positionCtx,
   } = useToastContext();
   const position = positionProps || positionCtx;
@@ -103,6 +102,7 @@ export const ToastSwipeHandler: React.FC<
           translate.value = withTiming(0, {
             easing: Easing.elastic(0.8),
           });
+          return;
         }
 
         if (shouldDismiss) {
@@ -201,9 +201,14 @@ export const ToastSwipeHandler: React.FC<
             ? undefined
             : {
                 justifyContent: 'center',
-                marginBottom: gap,
               },
-          { width: '100%', zIndex: -(numberOfToasts - index) },
+          {
+            width: '100%',
+            zIndex:
+              position === 'top-center'
+                ? -(index + 1)
+                : -(numberOfToasts - index),
+          },
           Platform.OS === 'android'
             ? {
                 opacity: 1,

@@ -6,6 +6,10 @@ import type {
   ToastVariant,
 } from './types';
 
+export const ESTIMATED_TOAST_HEIGHT = 70;
+export const CLOSE_BUTTON_HIT_AREA = 60;
+export const OUTSIDE_PRESS_PADDING = 20;
+
 export const toastDefaultValues: {
   duration: number;
   position: ToastPosition;
@@ -23,7 +27,6 @@ export const toastDefaultValues: {
   autoWiggleOnUpdate: AutoWiggle;
   richColors: boolean;
   enableStacking: boolean;
-  stackScale: number;
   stackGap: number;
 } = {
   duration: 4000,
@@ -42,6 +45,5 @@ export const toastDefaultValues: {
   autoWiggleOnUpdate: 'never',
   richColors: false,
   enableStacking: true,
-  stackScale: 0.95,
   stackGap: 8,
 };

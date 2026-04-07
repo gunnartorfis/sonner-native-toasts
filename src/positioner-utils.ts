@@ -1,4 +1,5 @@
 import type { ViewStyle } from 'react-native';
+import { ESTIMATED_TOAST_HEIGHT, OUTSIDE_PRESS_PADDING } from './constants';
 import type { ToastPosition } from './types';
 
 export const getContainerStyle = (position: ToastPosition): ViewStyle => {
@@ -32,21 +33,16 @@ export const getInsetValues = ({
   offset?: number;
   safeAreaInsets?: { top: number; bottom: number };
 }): { top?: number; bottom?: number } => {
-  const spacingForSafeArea = 20;
   const { top = 0, bottom = 0 } = safeAreaInsets || {};
 
   if (position === 'bottom-center') {
-    const safeAreaSpacing = offset || bottom || 0;
-    return {
-      bottom: safeAreaSpacing === 0 ? 40 : safeAreaSpacing + spacingForSafeArea,
-    };
+    if (offset) return { bottom: offset };
+    return { bottom: bottom > 0 ? bottom + 8 : 16 };
   }
 
   if (position === 'top-center') {
-    const safeAreaSpacing = offset || top || 0;
-    return {
-      top: safeAreaSpacing === 0 ? 40 : safeAreaSpacing + spacingForSafeArea,
-    };
+    if (offset) return { top: offset };
+    return { top: top > 0 ? top + 8 : 16 };
   }
 
   return {};
@@ -65,28 +61,25 @@ export const calculateOutsidePressableArea = ({
   visibleToasts: number;
   insetValues: { top?: number; bottom?: number };
 }): ViewStyle => {
-  // Calculate the approximate height of the toast stack
-  const ESTIMATED_TOAST_HEIGHT = 70; // Fallback height
   const toastHeightValues = Object.values(toastHeights);
-  const numberOfToastsTocalculate = Math.min(
+  const numberOfToastsToCalculate = Math.min(
     toastHeightValues.length,
-    visibleToasts || 3
+    visibleToasts ?? 3
   );
 
-  // Calculate total height: use actual heights if available, otherwise estimate
-  const totalToastHeight =
-    toastHeightValues.length > 0
-      ? toastHeightValues
-          .slice(0, numberOfToastsTocalculate)
-          .reduce((sum, height) => sum + height, 0)
-      : ESTIMATED_TOAST_HEIGHT * numberOfToastsTocalculate;
+  let totalToastHeight = 0;
+  if (toastHeightValues.length > 0) {
+    for (let i = 0; i < numberOfToastsToCalculate; i++) {
+      totalToastHeight += toastHeightValues[i]!;
+    }
+  } else {
+    totalToastHeight = ESTIMATED_TOAST_HEIGHT * numberOfToastsToCalculate;
+  }
 
-  const gapHeight = gap * Math.max(0, numberOfToastsTocalculate - 1);
-  const stackHeight = totalToastHeight + gapHeight + 20; // Add some padding
+  const gapHeight = gap * Math.max(0, numberOfToastsToCalculate - 1);
+  const stackHeight = totalToastHeight + gapHeight + OUTSIDE_PRESS_PADDING;
 
-  // Position the pressable area outside the toast stack
   if (position === 'top-center') {
-    // For top position, pressable area is below the toast stack
     const topOffset = (insetValues.top || 40) + stackHeight;
     return {
       position: 'absolute',
@@ -98,7 +91,6 @@ export const calculateOutsidePressableArea = ({
   }
 
   if (position === 'bottom-center') {
-    // For bottom position, pressable area is above the toast stack
     const bottomOffset = (insetValues.bottom || 40) + stackHeight;
     return {
       position: 'absolute',
@@ -109,6 +101,5 @@ export const calculateOutsidePressableArea = ({
     };
   }
 
-  // No outside press for center position
   return { display: 'none' };
 };

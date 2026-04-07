@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Pressable,
   Text,
   View,
@@ -13,21 +14,34 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { ANIMATION_DURATION, useToastLayoutAnimations } from './animations';
+import { STACKING_ANIMATION_DURATION, useToastLayoutAnimations } from './animations';
 import { toastDefaultValues } from './constants';
-import { useToastContext } from './context';
+import { useDynamicToastContext, useToastContext } from './context';
 import { easeOutQuartFn } from './easings';
 import { ToastSwipeHandler } from './gestures';
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from './icons';
-import { getOrderedToastIds } from './position-utils';
 import { isPressNearCloseButton } from './press-utils';
 import { toastStore } from './toast-store';
-import { isToastAction, type ToastProps, type ToastRef } from './types';
+import {
+  isToastAction,
+  type ToastProps,
+  type ToastRef,
+  type ToastStyles,
+} from './types';
 import { useAppStateListener } from './use-app-state';
-import { useDefaultStyles, type DefaultStyles } from './use-default-styles';
+import {
+  useDefaultStyles,
+  useIconColor,
+  type DefaultStyles,
+} from './use-default-styles';
 import { useToastPosition } from './use-toast-position';
 
-export const Toast = React.forwardRef<ToastRef, ToastProps>(
+type ToastInternalProps = ToastProps & {
+  parentStyle?: ToastProps['style'];
+  parentStyles?: ToastStyles;
+};
+
+export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
   (
     {
       id,
@@ -49,6 +63,8 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       cancelButtonTextStyle,
       style,
       styles,
+      parentStyle,
+      parentStyles,
       promiseOptions,
       position,
       unstyled: unstyledProps,
@@ -59,6 +75,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       backgroundComponent: backgroundComponentProps,
       numberOfToasts,
       index,
+      orderedToastIds,
     },
     ref
   ) => {
@@ -70,12 +87,9 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       invert: invertCtx,
       richColors: richColorsCtx,
       enableStacking,
-      newestToastHeightShared,
-      toastHeights,
       gap,
       position: positionCtx,
-      isExpanded,
-      toggleExpand,
+      visibleToasts: visibleToastsCtx,
       toastOptions: {
         unstyled: unstyledCtx,
         toastContainerStyle: toastContainerStyleCtx,
@@ -99,7 +113,12 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
         loading: loadingStyleCtx,
       },
     } = useToastContext();
-    const { visibleToasts: visibleToastsCtx } = useToastContext();
+    const {
+      toastHeights,
+      toastHeightsVersion,
+      isExpanded,
+      toggleExpand,
+    } = useDynamicToastContext();
     const invert = invertProps ?? invertCtx;
     const richColors = richColorsProps ?? richColorsCtx;
     const unstyled = unstyledProps ?? unstyledCtx;
@@ -108,10 +127,43 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
     const backgroundComponent =
       backgroundComponentProps ?? backgroundComponentCtx;
 
+    const mergedStyle = React.useMemo(
+      () =>
+        parentStyle || style
+          ? { ...parentStyle, ...style }
+          : undefined,
+      [parentStyle, style]
+    );
+    const mergedStyles = React.useMemo(
+      () => {
+        if (!parentStyles && !styles) return undefined;
+        return {
+          toastContainer: { ...parentStyles?.toastContainer, ...styles?.toastContainer },
+          toast: { ...parentStyles?.toast, ...styles?.toast },
+          toastContent: { ...parentStyles?.toastContent, ...styles?.toastContent },
+          textContainer: { ...parentStyles?.textContainer, ...styles?.textContainer },
+          title: { ...parentStyles?.title, ...styles?.title },
+          description: { ...parentStyles?.description, ...styles?.description },
+          buttons: { ...parentStyles?.buttons, ...styles?.buttons },
+          closeButton: { ...parentStyles?.closeButton, ...styles?.closeButton },
+          closeButtonIcon: { ...parentStyles?.closeButtonIcon, ...styles?.closeButtonIcon },
+        };
+      },
+      [parentStyles, styles]
+    );
+
+    const toastPosition = position ?? positionCtx;
+
     // Determine if this toast should be hidden due to visibility limit
+    // For top-center (reversed array), front = index 0; for others, front = highest index
+    const distanceFromFront =
+      toastPosition === 'top-center'
+        ? index
+        : numberOfToasts - 1 - index;
     const isHiddenByLimit =
       enableStacking &&
-      index + 1 >= (visibleToastsCtx ?? toastDefaultValues.visibleToasts);
+      distanceFromFront >=
+        (visibleToastsCtx ?? toastDefaultValues.visibleToasts);
 
     const { entering, exiting } = useToastLayoutAnimations(
       position,
@@ -119,22 +171,6 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       numberOfToasts
     );
 
-    // Get all toasts to build ordered IDs for position calculation
-    const allToasts = React.useSyncExternalStore(
-      toastStore.subscribe,
-      toastStore.getSnapshot,
-      toastStore.getSnapshot
-    ).toasts;
-
-    // Build ordered toast IDs based on position for correct stacking
-    const toastPosition = position ?? positionCtx;
-    const orderedToastIds = getOrderedToastIds(
-      allToasts,
-      toastPosition,
-      enableStacking
-    );
-
-    // Calculate absolute position for this toast
     const stackGap = toastDefaultValues.stackGap;
     const yPosition = useToastPosition({
       id,
@@ -147,20 +183,11 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       orderedToastIds,
       isExpanded,
       stackGap,
+      toastHeightsVersion,
     });
 
     const isDragging = React.useRef(false);
-    // Type the ref to include getBoundingClientRect from New Architecture
-    const toastRef = React.useRef<
-      View & {
-        getBoundingClientRect?: () => {
-          x: number;
-          y: number;
-          width: number;
-          height: number;
-        };
-      }
-    >(null);
+    const toastRef = React.useRef<View & { getBoundingClientRect(): DOMRect }>(null);
 
     const wiggleSharedValue = useSharedValue(1);
 
@@ -170,34 +197,25 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       };
     }, [wiggleSharedValue]);
 
-    // Absolute positioning style for toasts
-    const absolutePositionStyle = useAnimatedStyle(() => {
-      return {
-        position: 'absolute',
-        width: '100%',
-        transform: [{ translateY: yPosition.value }],
-      };
-    }, [yPosition]);
-
-    // Horizontal margin for stacking effect
-    const horizontalMargin = useDerivedValue(() => {
+    // ScaleX: visual narrowing avoids layout-width changes that cause text rewrap
+    const screenWidth = Dimensions.get('window').width;
+    const stackScaleX = useDerivedValue(() => {
       'worklet';
-      // When expanded, remove horizontal margin
       if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
-        return withTiming(0, {
-          duration: ANIMATION_DURATION,
+        return withTiming(1, {
+          duration: STACKING_ANIMATION_DURATION,
           easing: easeOutQuartFn,
         });
       }
 
-      // Calculate multiplier based on position to match vertical stacking
       const multiplier =
         toastPosition === 'top-center' || toastPosition === 'center'
-          ? index // Top/Center: newest (index 0) has 0 margin, older have more
-          : numberOfToasts - index - 1; // Bottom: newest (highest index) has 0 margin
-
-      return withTiming(stackGap * multiplier, {
-        duration: ANIMATION_DURATION,
+          ? index
+          : numberOfToasts - index - 1;
+      const narrowAmount = stackGap * multiplier * 2;
+      const scale = Math.max(0.8, 1 - narrowAmount / screenWidth);
+      return withTiming(scale, {
+        duration: STACKING_ANIMATION_DURATION,
         easing: easeOutQuartFn,
       });
     }, [
@@ -207,13 +225,25 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       toastPosition,
       isExpanded,
       stackGap,
+      screenWidth,
     ]);
 
-    const horizontalStackingStyle = useAnimatedStyle(() => {
-      return {
-        marginHorizontal: horizontalMargin.value,
+    const absolutePositionStyle = useAnimatedStyle(() => {
+      const base: Record<string, unknown> = {
+        position: 'absolute',
+        width: '100%',
+        transform: [
+          { translateY: yPosition.value },
+          { scaleX: stackScaleX.value },
+        ],
       };
-    }, [horizontalMargin]);
+      if (toastPosition === 'bottom-center') {
+        base.bottom = 0;
+      } else {
+        base.top = 0;
+      }
+      return base;
+    }, [yPosition, toastPosition, stackScaleX]);
 
     const wiggle = React.useCallback(() => {
       'worklet';
@@ -245,39 +275,34 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       wiggle: wiggleHandler,
     }));
 
-    const onBackground = () => {
+    const onBackground = React.useCallback(() => {
       if (!pauseWhenPageIsHidden) {
         return;
       }
       toastStore.pauseTimer(id);
-    };
+    }, [pauseWhenPageIsHidden, id]);
 
-    const onForeground = () => {
+    const onForeground = React.useCallback(() => {
       if (!pauseWhenPageIsHidden) {
         return;
       }
       toastStore.resumeTimer(id);
-    };
+    }, [pauseWhenPageIsHidden, id]);
 
     useAppStateListener({
       onBackground,
       onForeground,
     });
 
-    // Measure toast height synchronously and report to store
+    // Synchronous layout read via New Architecture's getBoundingClientRect.
+    // Runs during commit so positions resolve in the same frame.
     React.useLayoutEffect(() => {
-      if (!enableStacking || !toastRef.current) {
+      if (!toastRef.current) {
         return;
       }
-
-      toastRef.current.measureInWindow?.((_, __, ___, height) => {
-        toastStore.setToastHeight(id, height);
-        // If this is the newest toast, update the shared value
-        if (index === numberOfToasts - 1) {
-          newestToastHeightShared.value = height;
-        }
-      });
-    }, [enableStacking, id, index, numberOfToasts, newestToastHeightShared]);
+      const { height } = toastRef.current.getBoundingClientRect();
+      toastStore.setToastHeight(id, height);
+    }, [id, variant, title, description, jsx]);
 
     const defaultStyles = useDefaultStyles({
       invert,
@@ -287,56 +312,76 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       variant,
     });
 
-    const variantStyles = {
-      success: successStyleCtx,
-      error: errorStyleCtx,
-      warning: warningStyleCtx,
-      info: infoStyleCtx,
-      loading: loadingStyleCtx,
-    };
+    const variantStyle =
+      variant === 'success' ? successStyleCtx :
+      variant === 'error' ? errorStyleCtx :
+      variant === 'warning' ? warningStyleCtx :
+      variant === 'info' ? infoStyleCtx :
+      loadingStyleCtx;
 
-    const variantStyle = variantStyles[variant];
+    const onRemove = React.useCallback(() => {
+      onDismiss?.(id);
+    }, [onDismiss, id]);
 
-    const toastSwipeHandlerProps = {
-      onRemove: () => {
-        onDismiss?.(id);
-      },
-      onBegin: () => {
-        isDragging.current = true;
-        // Pause timer when dragging starts
-        toastStore.pauseTimer(id);
-      },
-      onFinalize: () => {
-        isDragging.current = false;
-        // Resume timer when dragging ends (only if not expanded)
-        if (!isExpanded) {
-          toastStore.resumeTimer(id);
-        }
-      },
-      onPress: ({ x }: { x: number; y: number }) => {
-        // Only allow expanding/collapsing when:
-        // - Stacking is enabled and there are multiple toasts
-        // - Press is not near the close button area
-        // - Position is not center (no stacking for center)
+    const onSwipeBegin = React.useCallback(() => {
+      isDragging.current = true;
+      toastStore.pauseTimer(id);
+    }, [id]);
+
+    const onSwipeFinalize = React.useCallback(() => {
+      isDragging.current = false;
+      if (!isExpanded) {
+        toastStore.resumeTimer(id);
+      }
+    }, [id, isExpanded]);
+
+    const onSwipePress = React.useCallback(
+      ({ x }: { x: number; y: number }) => {
         const pressToastPosition = position || positionCtx;
         if (
           enableStacking &&
           numberOfToasts > 1 &&
-          !isPressNearCloseButton({ x }) &&
+          !isPressNearCloseButton({
+            x,
+            viewWidth: Dimensions.get('window').width,
+          }) &&
           pressToastPosition !== 'center'
         ) {
           toggleExpand();
         }
-        // Call user's onPress handler if provided
         onPress?.();
       },
-      enabled: !promiseOptions && dismissible,
-      style: [toastContainerStyleCtx, styles?.toastContainer],
-      unstyled: unstyled,
-      important: important,
-      position: position,
-      numberOfToasts,
-    };
+      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress]
+    );
+
+    const toastSwipeHandlerProps = React.useMemo(
+      () => ({
+        onRemove,
+        onBegin: onSwipeBegin,
+        onFinalize: onSwipeFinalize,
+        onPress: onSwipePress,
+        enabled: !promiseOptions && dismissible,
+        style: [toastContainerStyleCtx, mergedStyles?.toastContainer],
+        unstyled,
+        important,
+        position,
+        numberOfToasts,
+      }),
+      [
+        onRemove,
+        onSwipeBegin,
+        onSwipeFinalize,
+        onSwipePress,
+        promiseOptions,
+        dismissible,
+        toastContainerStyleCtx,
+        mergedStyles?.toastContainer,
+        unstyled,
+        important,
+        position,
+        numberOfToasts,
+      ]
+    );
 
     if (jsx) {
       return (
@@ -344,7 +389,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
           <Animated.View style={absolutePositionStyle}>
             <Animated.View
               ref={toastRef}
-              style={horizontalStackingStyle}
+
               entering={entering}
               exiting={exiting}
             >
@@ -374,17 +419,18 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
       >
         <Animated.View style={absolutePositionStyle}>
           <Animated.View
-            style={[wiggleAnimationStyle, horizontalStackingStyle]}
+            style={wiggleAnimationStyle}
           >
             <Animated.View
               ref={toastRef}
+
               style={[
                 unstyled ? undefined : elevationStyle,
                 defaultStyles.toast,
                 toastStyleCtx,
                 variantStyle,
-                styles?.toast,
-                style,
+                mergedStyles?.toast,
+                mergedStyle,
                 backgroundComponentStyle,
               ]}
               entering={entering}
@@ -395,7 +441,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                 style={[
                   defaultStyles.toastContent,
                   toastContentStyleCtx,
-                  styles?.toastContent,
+                  mergedStyles?.toastContent,
                   contentContainerStyle,
                 ]}
               >
@@ -420,11 +466,11 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                 style={[
                   { flex: 1 },
                   textContainerStyleCtx,
-                  styles?.textContainer,
+                  mergedStyles?.textContainer,
                 ]}
               >
                 <Text
-                  style={[defaultStyles.title, titleStyleCtx, styles?.title]}
+                  style={[defaultStyles.title, titleStyleCtx, mergedStyles?.title]}
                 >
                   {title}
                 </Text>
@@ -433,7 +479,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                     style={[
                       defaultStyles.description,
                       descriptionStyleCtx,
-                      styles?.description,
+                      mergedStyles?.description,
                     ]}
                   >
                     {description}
@@ -445,7 +491,7 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                       ? undefined
                       : defaultStyles.buttons,
                     buttonsStyleCtx,
-                    styles?.buttons,
+                    mergedStyles?.buttons,
                   ]}
                 >
                   {isToastAction(action) ? (
@@ -505,11 +551,10 @@ export const Toast = React.forwardRef<ToastRef, ToastProps>(
                   closeButton={closeButton}
                   onDismiss={onDismiss}
                   id={id}
-                  styles={styles}
-                  closeButtonStyle={[closeButtonStyleCtx, styles?.closeButton]}
+                  closeButtonStyle={[closeButtonStyleCtx, mergedStyles?.closeButton]}
                   closeButtonIconStyle={[
                     closeButtonIconStyleCtx,
-                    styles?.closeButtonIcon,
+                    mergedStyles?.closeButtonIcon,
                   ]}
                   defaultStyles={defaultStyles}
                 />
@@ -530,13 +575,7 @@ export const ToastIcon: React.FC<
     richColors: boolean;
   }
 > = ({ variant, invert, richColors }) => {
-  const color = useDefaultStyles({
-    variant,
-    invert,
-    richColors,
-    unstyled: false,
-    description: undefined,
-  }).iconColor;
+  const color = useIconColor({ variant, invert, richColors });
 
   switch (variant) {
     case 'success':
@@ -567,7 +606,6 @@ const CloseButton: React.FC<{
   closeButton: ToastProps['closeButton'];
   onDismiss: ToastProps['onDismiss'];
   id: ToastProps['id'];
-  styles: ToastProps['styles'];
   closeButtonStyle?: ViewProps['style'];
   closeButtonIconStyle?: ViewProps['style'];
   defaultStyles: DefaultStyles;
