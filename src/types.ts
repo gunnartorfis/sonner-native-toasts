@@ -84,7 +84,10 @@ export type ToastRef = {
 export function isToastAction(
   action: ToastAction | React.ReactNode
 ): action is ToastAction {
-  return (action as ToastAction)?.onClick !== undefined;
+  return (
+    (action as ToastAction)?.onClick !== undefined &&
+    (action as ToastAction)?.label !== undefined
+  );
 }
 
 type ExternalToast = Omit<
@@ -166,7 +169,7 @@ export type AddToastContextHandler = (
   data: Omit<ToastProps, 'id' | 'index' | 'numberOfToasts' | 'orderedToastIds'> & { id?: string | number }
 ) => string | number;
 
-export type ToasterContextType = Required<
+export type StableToastContextType = Required<
   Pick<
     ToasterProps,
     | 'duration'
@@ -188,6 +191,9 @@ export type ToasterContextType = Required<
   >
 > & {
   addToast: AddToastContextHandler;
+};
+
+export type DynamicToastContextType = {
   toastHeights: Record<string | number, number>;
   toastHeightsVersion: number;
   isExpanded: boolean;
@@ -195,6 +201,10 @@ export type ToasterContextType = Required<
   collapse: () => void;
   toggleExpand: () => void;
 };
+
+/** @deprecated Use StableToastContextType & DynamicToastContextType */
+export type ToasterContextType = StableToastContextType &
+  DynamicToastContextType;
 
 export declare const toast: ((
   message: string,

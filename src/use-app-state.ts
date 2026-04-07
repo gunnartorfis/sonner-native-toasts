@@ -13,7 +13,8 @@ export const useAppStateListener = ({
   React.useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (
-        appState.current.match(/inactive|background/) &&
+        (appState.current === 'inactive' ||
+          appState.current === 'background') &&
         nextAppState === 'active'
       ) {
         onForeground();

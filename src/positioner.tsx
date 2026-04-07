@@ -4,7 +4,7 @@ import {
   SafeAreaInsetsContext,
   initialWindowMetrics,
 } from 'react-native-safe-area-context';
-import { useToastContext } from './context';
+import { useDynamicToastContext, useToastContext } from './context';
 import {
   calculateOutsidePressableArea,
   getContainerStyle,
@@ -26,8 +26,8 @@ const useInsets = () => {
 export const Positioner: React.FC<
   React.PropsWithChildren<Pick<ToasterProps, 'position' | 'style'>>
 > = ({ children, position, style, ...props }) => {
-  const { offset, isExpanded, collapse, toastHeights, gap, visibleToasts } =
-    useToastContext();
+  const { offset, gap, visibleToasts } = useToastContext();
+  const { isExpanded, collapse, toastHeights } = useDynamicToastContext();
   const { top, bottom } = useInsets();
 
   const resolvedPosition = position || 'bottom-center';
@@ -39,11 +39,11 @@ export const Positioner: React.FC<
     safeAreaInsets: { top, bottom },
   });
 
-  const handleOutsidePress = () => {
+  const handleOutsidePress = React.useCallback(() => {
     if (isExpanded) {
       collapse();
     }
-  };
+  }, [isExpanded, collapse]);
 
   const outsidePressableStyle = calculateOutsidePressableArea({
     position: resolvedPosition,
