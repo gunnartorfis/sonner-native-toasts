@@ -26,4 +26,6 @@ config.watchFolders = [
 
 config.resolver.unstable_enablePackageExports = true;
 
+delete config.watcher.unstable_workerThreads;
+
 module.exports = config;
