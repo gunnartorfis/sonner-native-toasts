@@ -115,9 +115,23 @@
   },
   "jest": {
     "preset": "react-native",
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/__tests__/setup.ts"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/lib/",
+      "<rootDir>/example/"
+    ],
     "modulePathIgnorePatterns": [
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/__tests__/**/*",
+      "!src/index.tsx"
     ],
     "transformIgnorePatterns": [
       "node_modules/(?!(.pnpm|react-native|@react-native|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg)/)"

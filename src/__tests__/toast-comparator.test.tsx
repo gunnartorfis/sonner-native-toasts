@@ -20,6 +20,8 @@ describe('areToastsEqual', () => {
       dismissible: true,
       action: { label: 'Retry', onClick: mockClickHandler },
       cancel: { label: 'Cancel', onClick: mockClickHandler },
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -34,6 +36,8 @@ describe('areToastsEqual', () => {
       dismissible: true,
       action: { label: 'Retry', onClick: mockClickHandler },
       cancel: { label: 'Cancel', onClick: mockClickHandler },
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(true);
@@ -46,6 +50,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       description: 'This is a toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -54,6 +60,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       description: 'This is a toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(false);
@@ -66,6 +74,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       description: 'This is a toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -74,6 +84,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 2',
       variant: 'success',
       description: 'This is a toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(false);
@@ -86,6 +98,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       description: 'This is a toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -94,6 +108,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'error',
       description: 'This is a toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(false);
@@ -106,6 +122,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       description: 'This is a toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -114,6 +132,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       description: 'This is another toast',
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(false);
@@ -126,6 +146,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       action: { label: 'Retry', onClick: mockClickHandler },
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -134,6 +156,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       action: { label: 'Ignore', onClick: mockClickHandler },
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(false);
@@ -149,6 +173,8 @@ describe('areToastsEqual', () => {
       variant: 'success',
       action: mockReactNode,
       cancel: mockReactNode,
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -158,6 +184,8 @@ describe('areToastsEqual', () => {
       variant: 'success',
       action: mockReactNode,
       cancel: mockReactNode,
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(true);
@@ -170,6 +198,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       cancel: { label: 'Cancel', onClick: mockClickHandler },
+      index: 0,
+      numberOfToasts: 1,
     };
 
     const toast2: ToastProps = {
@@ -178,6 +208,8 @@ describe('areToastsEqual', () => {
       title: 'Toast 1',
       variant: 'success',
       cancel: { label: 'Dismiss', onClick: mockClickHandler },
+      index: 0,
+      numberOfToasts: 1,
     };
 
     expect(areToastsEqual(toast1, toast2)).toBe(false);
