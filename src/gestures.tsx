@@ -18,7 +18,7 @@ const { width: WINDOW_WIDTH } = Dimensions.get('window');
 
 type ToastSwipeHandlerProps = Pick<
   ToastProps,
-  'important' | 'index' | 'numberOfToasts'
+  'important'
 > & {
   onRemove: () => void;
   style?: ViewStyle | (ViewStyle | undefined)[];
@@ -43,8 +43,6 @@ export const ToastSwipeHandler: React.FC<
   important,
   position: positionProps,
   onPress,
-  index,
-  numberOfToasts,
 }) => {
   const translate = useSharedValue(0);
   const {
@@ -204,10 +202,6 @@ export const ToastSwipeHandler: React.FC<
               },
           {
             width: '100%',
-            zIndex:
-              position === 'top-center'
-                ? -(index + 1)
-                : -(numberOfToasts - index),
           },
           Platform.OS === 'android'
             ? {

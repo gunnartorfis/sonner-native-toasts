@@ -365,7 +365,6 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
         unstyled,
         important,
         position,
-        numberOfToasts,
       }),
       [
         onRemove,
@@ -379,14 +378,17 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
         unstyled,
         important,
         position,
-        numberOfToasts,
       ]
     );
 
+    const stackZIndex = toastPosition === 'top-center'
+      ? -(index + 1)
+      : -(numberOfToasts - index);
+
     if (jsx) {
       return (
-        <ToastSwipeHandler {...toastSwipeHandlerProps} index={index}>
-          <Animated.View style={absolutePositionStyle}>
+        <Animated.View style={[absolutePositionStyle, { zIndex: stackZIndex }]}>
+          <ToastSwipeHandler {...toastSwipeHandlerProps}>
             <Animated.View
               ref={toastRef}
 
@@ -395,8 +397,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
             >
               {jsx}
             </Animated.View>
-          </Animated.View>
-        </ToastSwipeHandler>
+          </ToastSwipeHandler>
+        </Animated.View>
       );
     }
 
@@ -412,12 +414,10 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       : undefined;
 
     return (
-      <ToastSwipeHandler
-        {...toastSwipeHandlerProps}
-        index={index}
-        numberOfToasts={numberOfToasts}
-      >
-        <Animated.View style={absolutePositionStyle}>
+      <Animated.View style={[absolutePositionStyle, { zIndex: stackZIndex }]}>
+        <ToastSwipeHandler
+          {...toastSwipeHandlerProps}
+        >
           <Animated.View
             style={wiggleAnimationStyle}
           >
@@ -561,8 +561,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
               </View>
             </Animated.View>
           </Animated.View>
-        </Animated.View>
-      </ToastSwipeHandler>
+        </ToastSwipeHandler>
+      </Animated.View>
     );
   }
 );
