@@ -1,41 +1,25 @@
 import * as React from 'react';
 import { Pressable, Text, useColorScheme } from 'react-native';
-import { Stack, useGlobalSearchParams, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import {
-  Toaster,
-  type AutoWiggle,
-  type ToastPosition,
-  type ToastSwipeDirection,
-  type ToastTheme,
-} from 'sonner-native';
+import { Toaster } from 'sonner-native';
+import { useToasterParams } from '../hooks/useToasterParams';
 
 const RootLayout: React.FC = () => {
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const params = useGlobalSearchParams<{
-    stacking?: string;
-    position?: string;
-    theme?: string;
-    swipeDirection?: string;
-    closeButton?: string;
-    visibleToasts?: string;
-    autoWiggle?: string;
-    richColors?: string;
-    invert?: string;
-  }>();
-
-  const position = (params.position as ToastPosition) || 'top-center';
-  const stackingEnabled = params.stacking !== 'false';
-  const theme = (params.theme as ToastTheme) || 'system';
-  const swipeDirection =
-    (params.swipeDirection as ToastSwipeDirection) || 'up';
-  const closeButton = params.closeButton !== 'false';
-  const visibleToasts = parseInt(params.visibleToasts || '4', 10);
-  const autoWiggle = (params.autoWiggle as AutoWiggle) || 'toast-change';
-  const richColors = params.richColors === 'true';
-  const invert = params.invert === 'true';
+  const {
+    position,
+    stackingEnabled,
+    theme,
+    swipeDirection,
+    closeButton,
+    visibleToasts,
+    autoWiggle,
+    richColors,
+    invert,
+  } = useToasterParams();
 
   return (
     <SafeAreaProvider>
@@ -78,7 +62,6 @@ const RootLayout: React.FC = () => {
         </Stack>
         <Toaster
           position={position}
-          duration={30000}
           swipeToDismissDirection={swipeDirection}
           visibleToasts={visibleToasts}
           closeButton={closeButton}

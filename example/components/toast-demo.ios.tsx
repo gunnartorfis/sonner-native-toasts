@@ -13,46 +13,25 @@ import {
   tag,
   disabled as disabledModifier,
 } from '@expo/ui/swift-ui/modifiers';
-import { useGlobalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
-import {
-  toast,
-  type AutoWiggle,
-  type ToastPosition,
-  type ToastSwipeDirection,
-  type ToastTheme,
-} from 'sonner-native';
+import { toast } from 'sonner-native';
+import { useToasterParams } from '../hooks/useToasterParams';
 
 const ToastDemo: React.FC = () => {
   const [toastId, setToastId] = React.useState<string | number | null>(null);
-  const router = useRouter();
-  const params = useGlobalSearchParams<{
-    stacking?: string;
-    position?: string;
-    theme?: string;
-    swipeDirection?: string;
-    closeButton?: string;
-    visibleToasts?: string;
-    autoWiggle?: string;
-    richColors?: string;
-    invert?: string;
-  }>();
-
-  const position = (params.position as ToastPosition) || 'top-center';
-  const stackingEnabled = params.stacking !== 'false';
-  const theme = (params.theme as ToastTheme) || 'system';
-  const swipeDirection =
-    (params.swipeDirection as ToastSwipeDirection) || 'up';
-  const closeButton = params.closeButton !== 'false';
-  const visibleToasts = parseInt(params.visibleToasts || '4', 10);
-  const autoWiggle = (params.autoWiggle as AutoWiggle) || 'toast-change';
-  const richColors = params.richColors === 'true';
-  const invert = params.invert === 'true';
-
-  const setParam = (key: string, value: string) => {
-    router.setParams({ [key]: value });
-  };
+  const {
+    position,
+    stackingEnabled,
+    theme,
+    swipeDirection,
+    closeButton,
+    visibleToasts,
+    autoWiggle,
+    richColors,
+    invert,
+    setParam,
+  } = useToasterParams();
 
   return (
     <Host style={{ flex: 1 }}>
@@ -152,7 +131,7 @@ const ToastDemo: React.FC = () => {
         <Section title="Basic">
           <SwiftUIButton
             modifiers={[buttonStyle('borderedProminent')]}
-            onPress={() => toast.success('Hello world', {})}
+            onPress={() => toast.success('Hello world')}
             label="Show basic toast"
           />
           <SwiftUIButton
@@ -686,7 +665,7 @@ const ToastDemo: React.FC = () => {
                     </Pressable>
                   </View>
                 </View>,
-                { duration: 30000, position: 'bottom-center' }
+                { position: 'bottom-center' }
               );
             }}
             label="Custom JSX"

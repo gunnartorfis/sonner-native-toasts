@@ -10,10 +10,10 @@ const TabsLayout: React.FC = () => {
     <NativeTabs blurEffect={blurEffect}>
       <NativeTabs.Trigger name="(home)">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="house.fill" drawable="custom_android_drawable" />
+        <NativeTabs.Trigger.Icon sf="house.fill" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(settings)">
-        <NativeTabs.Trigger.Icon sf="gear" drawable="custom_settings_drawable" />
+        <NativeTabs.Trigger.Icon sf="gear" />
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
