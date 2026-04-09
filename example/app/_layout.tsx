@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, Text, useColorScheme } from 'react-native';
+import { Platform, Pressable, Text, useColorScheme } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -61,6 +61,7 @@ const RootLayout: React.FC = () => {
           />
         </Stack>
         <Toaster
+          positionerStyle={Platform.OS === 'android' ? { elevation: 999 } : undefined}
           position={position}
           swipeToDismissDirection={swipeDirection}
           visibleToasts={visibleToasts}
