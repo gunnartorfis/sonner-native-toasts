@@ -341,17 +341,27 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
         if (
           enableStacking &&
           numberOfToasts > 1 &&
-          !isPressNearCloseButton({
-            x,
-            viewWidth: Dimensions.get('window').width,
-          }) &&
           pressToastPosition !== 'center'
         ) {
-          toggleExpand();
+          if (
+            isPressNearCloseButton({
+              x,
+              viewWidth: Dimensions.get('window').width,
+            })
+          ) {
+            // On Android, the RNGH Tap gesture intercepts the touch before
+            // it reaches the native Pressable (close button). Dismiss
+            // explicitly when tapping the close button area while expanded.
+            if (isExpanded && closeButton && dismissible) {
+              onDismiss?.(id);
+            }
+          } else {
+            toggleExpand();
+          }
         }
         onPress?.();
       },
-      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress]
+      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress, isExpanded, closeButton, dismissible, onDismiss, id]
     );
 
     const toastSwipeHandlerProps = React.useMemo(
