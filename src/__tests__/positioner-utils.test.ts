@@ -65,8 +65,8 @@ describe('positioner-utils', () => {
         safeAreaInsets: mockSafeAreaInsets,
       });
 
-      // bottom (34) + spacingForSafeArea (20) = 54
-      expect(result).toEqual({ bottom: 54 });
+      // bottom (34) + 8 = 42
+      expect(result).toEqual({ bottom: 42 });
     });
 
     it('should return bottom inset for bottom-center position without safe area', () => {
@@ -75,19 +75,19 @@ describe('positioner-utils', () => {
         safeAreaInsets: { top: 0, bottom: 0 },
       });
 
-      // Default to 40 when no safe area
-      expect(result).toEqual({ bottom: 40 });
+      // Default to 16 when no safe area
+      expect(result).toEqual({ bottom: 16 });
     });
 
-    it('should use offset instead of safe area bottom when provided', () => {
+    it('should use offset directly when provided', () => {
       const result = getInsetValues({
         position: 'bottom-center',
         offset: 20,
         safeAreaInsets: mockSafeAreaInsets,
       });
 
-      // offset (20) + spacingForSafeArea (20) = 40
-      expect(result).toEqual({ bottom: 40 });
+      // offset is used directly
+      expect(result).toEqual({ bottom: 20 });
     });
 
     it('should return top inset for top-center position with safe area', () => {
@@ -96,8 +96,8 @@ describe('positioner-utils', () => {
         safeAreaInsets: mockSafeAreaInsets,
       });
 
-      // top (44) + spacingForSafeArea (20) = 64
-      expect(result).toEqual({ top: 64 });
+      // top (44) + 8 = 52
+      expect(result).toEqual({ top: 52 });
     });
 
     it('should return top inset for top-center position without safe area', () => {
@@ -106,19 +106,19 @@ describe('positioner-utils', () => {
         safeAreaInsets: { top: 0, bottom: 0 },
       });
 
-      // Default to 40 when no safe area
-      expect(result).toEqual({ top: 40 });
+      // Default to 16 when no safe area
+      expect(result).toEqual({ top: 16 });
     });
 
-    it('should use offset instead of safe area top when provided', () => {
+    it('should use offset directly for top-center when provided', () => {
       const result = getInsetValues({
         position: 'top-center',
         offset: 30,
         safeAreaInsets: mockSafeAreaInsets,
       });
 
-      // offset (30) + spacingForSafeArea (20) = 50
-      expect(result).toEqual({ top: 50 });
+      // offset is used directly
+      expect(result).toEqual({ top: 30 });
     });
 
     it('should return empty object for center position', () => {
@@ -144,8 +144,8 @@ describe('positioner-utils', () => {
         position: 'bottom-center',
       });
 
-      // Should default to 40 when no safe area insets provided
-      expect(result).toEqual({ bottom: 40 });
+      // Defaults to 16 when no safe area insets
+      expect(result).toEqual({ bottom: 16 });
     });
   });
 
@@ -154,7 +154,7 @@ describe('positioner-utils', () => {
       toastHeights: { 'toast-1': 60, 'toast-2': 70, 'toast-3': 80 },
       gap: 14,
       visibleToasts: 3,
-      insetValues: { top: 64, bottom: 54 },
+      insetValues: { top: 52, bottom: 42 },
     };
 
     it('should calculate correct pressable area for top-center position', () => {
@@ -166,10 +166,10 @@ describe('positioner-utils', () => {
       // totalToastHeight = 60 + 70 + 80 = 210
       // gapHeight = 14 * (3 - 1) = 28
       // stackHeight = 210 + 28 + 20 = 258
-      // topOffset = 64 + 258 = 322
+      // topOffset = 52 + 258 = 310
       expect(result).toEqual({
         position: 'absolute',
-        top: 322,
+        top: 310,
         bottom: 0,
         left: 0,
         right: 0,
@@ -185,11 +185,11 @@ describe('positioner-utils', () => {
       // totalToastHeight = 60 + 70 + 80 = 210
       // gapHeight = 14 * (3 - 1) = 28
       // stackHeight = 210 + 28 + 20 = 258
-      // bottomOffset = 54 + 258 = 312
+      // bottomOffset = 42 + 258 = 300
       expect(result).toEqual({
         position: 'absolute',
         top: 0,
-        bottom: 312,
+        bottom: 300,
         left: 0,
         right: 0,
       });
@@ -211,31 +211,32 @@ describe('positioner-utils', () => {
         toastHeights: {},
       });
 
-      // Since no actual heights, the slice will be empty, so totalToastHeight = 0
-      // But the function falls back to estimated height calculation
-      // ESTIMATED_TOAST_HEIGHT = 70, but with empty heights array, calculation is different
-      // Let's accept the actual result and verify the logic
-      expect(result.position).toBe('absolute');
-      expect(result.top).toBeGreaterThan(60); // Should be some reasonable value
-      expect(result.bottom).toBe(0);
-      expect(result.left).toBe(0);
-      expect(result.right).toBe(0);
+      // With empty heights, numberOfToastsToCalculate = min(0, 3) = 0
+      // totalToastHeight = 70 * 0 = 0, gapHeight = 14 * max(0, -1) = 0
+      // stackHeight = 0 + 0 + 20 = 20, topOffset = 52 + 20 = 72
+      expect(result).toEqual({
+        position: 'absolute',
+        top: 72,
+        bottom: 0,
+        left: 0,
+        right: 0,
+      });
     });
 
     it('should limit calculation to visible toasts count', () => {
       const result = calculateOutsidePressableArea({
         ...baseParams,
         position: 'top-center',
-        visibleToasts: 2, // Only calculate for 2 toasts
+        visibleToasts: 2,
       });
 
       // totalToastHeight = 60 + 70 = 130 (only first 2 toasts)
       // gapHeight = 14 * (2 - 1) = 14
       // stackHeight = 130 + 14 + 20 = 164
-      // topOffset = 64 + 164 = 228
+      // topOffset = 52 + 164 = 216
       expect(result).toEqual({
         position: 'absolute',
-        top: 228,
+        top: 216,
         bottom: 0,
         left: 0,
         right: 0,
@@ -250,12 +251,16 @@ describe('positioner-utils', () => {
         visibleToasts: 2,
       });
 
-      // Similar to above test - verify the structure but be flexible with the exact value
-      expect(result.position).toBe('absolute');
-      expect(result.top).toBe(0);
-      expect(result.bottom).toBeGreaterThan(50); // Should be some reasonable value
-      expect(result.left).toBe(0);
-      expect(result.right).toBe(0);
+      // With empty heights, numberOfToastsToCalculate = min(0, 2) = 0
+      // totalToastHeight = 70 * 0 = 0, gapHeight = 0
+      // stackHeight = 0 + 0 + 20 = 20, bottomOffset = 42 + 20 = 62
+      expect(result).toEqual({
+        position: 'absolute',
+        top: 0,
+        bottom: 62,
+        left: 0,
+        right: 0,
+      });
     });
 
     it('should handle zero gap', () => {
@@ -268,10 +273,10 @@ describe('positioner-utils', () => {
       // totalToastHeight = 60 + 70 + 80 = 210
       // gapHeight = 0 * (3 - 1) = 0
       // stackHeight = 210 + 0 + 20 = 230
-      // topOffset = 64 + 230 = 294
+      // topOffset = 52 + 230 = 282
       expect(result).toEqual({
         position: 'absolute',
-        top: 294,
+        top: 282,
         bottom: 0,
         left: 0,
         right: 0,
@@ -288,11 +293,11 @@ describe('positioner-utils', () => {
       // totalToastHeight = 60 (only first toast)
       // gapHeight = 14 * Math.max(0, 1 - 1) = 0
       // stackHeight = 60 + 0 + 20 = 80
-      // bottomOffset = 54 + 80 = 134
+      // bottomOffset = 42 + 80 = 122
       expect(result).toEqual({
         position: 'absolute',
         top: 0,
-        bottom: 134,
+        bottom: 122,
         left: 0,
         right: 0,
       });
@@ -302,7 +307,7 @@ describe('positioner-utils', () => {
       const result = calculateOutsidePressableArea({
         ...baseParams,
         position: 'top-center',
-        insetValues: {}, // No inset values
+        insetValues: {},
       });
 
       // totalToastHeight = 60 + 70 + 80 = 210

@@ -126,27 +126,27 @@ describe('animation-utils', () => {
     });
 
     describe('edge cases', () => {
-      it('should handle undefined numberOfToasts', () => {
+      it('should handle undefined numberOfToasts as single toast', () => {
         const result = getExitingTranslateY({
           position: 'top-center',
           isHiddenByLimit: false,
           numberOfToasts: undefined,
-        stackGap: 8,
+          stackGap: 8,
         });
 
-        // Should use stackGap for multiple toasts (since logic treats undefined as falsy)
-        expect(result).toBe(-8);
+        // undefined == null is true, so treated as single toast
+        expect(result).toBe(-150);
       });
 
-      it('should handle zero numberOfToasts', () => {
+      it('should handle zero numberOfToasts as multi-toast', () => {
         const result = getExitingTranslateY({
           position: 'top-center',
           isHiddenByLimit: false,
           numberOfToasts: 0,
-        stackGap: 8,
+          stackGap: 8,
         });
 
-        // Should use stackGap for multiple toasts (since logic treats 0 as falsy)
+        // 0 != null and 0 !== 1, so falls to multi-toast logic
         expect(result).toBe(-8);
       });
 

@@ -4,14 +4,15 @@ import type { ToastProps, ToastPosition } from '../types';
 describe('position-utils', () => {
   describe('getOrderedToastIds', () => {
     const mockToasts: ToastProps[] = [
-      { id: 'toast-1', title: 'Toast 1', variant: 'info', index: 0, numberOfToasts: 3 },
-      { id: 'toast-2', title: 'Toast 2', variant: 'info', index: 1, numberOfToasts: 3 },
-      { id: 'toast-3', title: 'Toast 3', variant: 'info', index: 2, numberOfToasts: 3 },
+      { id: 'toast-1', title: 'Toast 1', variant: 'info', index: 0, numberOfToasts: 3, orderedToastIds: ['toast-1', 'toast-2', 'toast-3'] },
+      { id: 'toast-2', title: 'Toast 2', variant: 'info', index: 1, numberOfToasts: 3, orderedToastIds: ['toast-1', 'toast-2', 'toast-3'] },
+      { id: 'toast-3', title: 'Toast 3', variant: 'info', index: 2, numberOfToasts: 3, orderedToastIds: ['toast-1', 'toast-2', 'toast-3'] },
     ];
 
-    it('should return reversed order for top-center with stacking', () => {
+    it('should return normal order for top-center with stacking', () => {
+      // With stacking enabled, toasts are returned as-is (already in rendering order)
       const result = getOrderedToastIds(mockToasts, 'top-center', true);
-      expect(result).toEqual(['toast-3', 'toast-2', 'toast-1']);
+      expect(result).toEqual(['toast-1', 'toast-2', 'toast-3']);
     });
 
     it('should return normal order for bottom-center with stacking', () => {
@@ -46,7 +47,7 @@ describe('position-utils', () => {
       gap: 14,
       orderedToastIds: ['toast-1', 'toast-2', 'toast-3'],
       isExpanded: false,
-        stackGap: 8,
+      stackGap: 8,
     };
 
     describe('bottom-center position', () => {
@@ -60,8 +61,11 @@ describe('position-utils', () => {
           position,
         });
 
-        // Bottom stacking: newest (highest index) at 0
-        expect(Math.abs(result)).toBe(0); // Handle -0 vs 0
+        // Bottom stacking for index 2 (front toast):
+        // frontId = orderedToastIds[2] = 'toast-3', frontHeight = 80
+        // distFromFront = 3-1-2 = 0
+        // result = -(80 + 0*8 - 80) = 0
+        expect(Math.abs(result)).toBe(0);
       });
 
       it('should calculate correct position for stacking mode - older toast', () => {
@@ -72,10 +76,12 @@ describe('position-utils', () => {
           position,
         });
 
-        // Bottom stacking: older toasts offset up (negative)
-        // multiplier = numberOfToasts - index - 1 = 3 - 0 - 1 = 2
-        // stackGap = 8 (from constants)
-        expect(result).toBe(-16); // -8 * 2
+        // Bottom stacking for index 0:
+        // frontId = orderedToastIds[2] = 'toast-3', frontHeight = 80
+        // currentId = 'toast-1', currentHeight = 60
+        // distFromFront = 3-1-0 = 2
+        // result = -(80 + 2*8 - 60) = -(80+16-60) = -36
+        expect(result).toBe(-36);
       });
 
       it('should calculate correct position for non-stacking mode', () => {
@@ -86,24 +92,23 @@ describe('position-utils', () => {
           position,
         });
 
-        // Bottom non-stacking: sum heights going up (negative)
-        // Index 1 means toast-2, so we sum heights for toast-3 (index 2)
+        // Bottom non-stacking: sum heights above index 1 (i.e. index 2)
         // Height of toast-3 = 80, gap = 14
         const expectedOffset = -(80 + 14);
         expect(result).toBe(expectedOffset);
       });
 
-      it('should handle expanded state with tighter spacing', () => {
+      it('should handle expanded state with stackGap spacing', () => {
         const result = calculateToastPosition({
           ...baseParams,
           index: 1,
           enableStacking: false,
           position,
           isExpanded: true,
-        stackGap: 8,
+          stackGap: 8,
         });
 
-        // When expanded, use stackGap (8) instead of gap (14)
+        // When expanded, effectiveEnableStacking = false, effectiveGap = stackGap = 8
         // Height of toast-3 = 80, stackGap = 8
         const expectedOffset = -(80 + 8);
         expect(result).toBe(expectedOffset);
@@ -121,7 +126,10 @@ describe('position-utils', () => {
           position,
         });
 
-        // Top stacking: newest (index 0) at 0
+        // Top stacking for index 0 (front toast):
+        // frontId = orderedToastIds[0] = 'toast-1', frontHeight = 60
+        // currentHeight = 60
+        // result = 60 + 0*8 - 60 = 0
         expect(result).toBe(0);
       });
 
@@ -133,10 +141,11 @@ describe('position-utils', () => {
           position,
         });
 
-        // Top stacking: older toasts offset down (positive)
-        // multiplier = index = 2
-        // stackGap = 8
-        expect(result).toBe(16); // 8 * 2
+        // Top stacking for index 2:
+        // frontId = orderedToastIds[0] = 'toast-1', frontHeight = 60
+        // currentId = 'toast-3', currentHeight = 80
+        // result = 60 + 2*8 - 80 = 60+16-80 = -4
+        expect(result).toBe(-4);
       });
 
       it('should calculate correct position for non-stacking mode', () => {
@@ -147,8 +156,7 @@ describe('position-utils', () => {
           position,
         });
 
-        // Top non-stacking: sum heights going down (positive)
-        // Index 2 means toast-3, so we sum heights for toast-1 and toast-2
+        // Top non-stacking: sum heights for toast-1 and toast-2
         // Heights: toast-1 (60) + gap (14) + toast-2 (70) + gap (14)
         const expectedOffset = 60 + 14 + 70 + 14;
         expect(result).toBe(expectedOffset);
@@ -168,8 +176,7 @@ describe('position-utils', () => {
 
         // Center stacking: offset from center
         // offsetFromCenter = stackGap * (numberOfToasts - index - 1)
-        // stackGap = 8, numberOfToasts = 3, index = 1
-        // offsetFromCenter = 8 * (3 - 1 - 1) = 8 * 1 = 8
+        // = 8 * (3 - 1 - 1) = 8 * 1 = 8
         expect(result).toBe(8);
       });
 
@@ -182,25 +189,24 @@ describe('position-utils', () => {
         });
 
         // Center non-stacking: sum heights for previous toasts
-        // Index 1 means toast-2, so we sum height for toast-1
         // Height of toast-1 = 60, gap = 14
         const expectedOffset = 60 + 14;
         expect(result).toBe(expectedOffset);
       });
 
-      it('should use stackGap when expanded in non-stacking mode', () => {
+      it('should use gap in center non-stacking mode even when expanded', () => {
         const result = calculateToastPosition({
           ...baseParams,
           index: 1,
           enableStacking: false,
           position,
           isExpanded: true,
-        stackGap: 8,
+          stackGap: 8,
         });
 
-        // When expanded, use stackGap (8) instead of gap (14)
-        // Height of toast-1 = 60, stackGap = 8
-        const expectedOffset = 60 + 8;
+        // Center non-stacking always uses gap (not stackGap)
+        // Height of toast-1 = 60, gap = 14
+        const expectedOffset = 60 + 14;
         expect(result).toBe(expectedOffset);
       });
     });
@@ -211,12 +217,12 @@ describe('position-utils', () => {
         index: 1,
         enableStacking: false,
         position: 'top-center',
-        allToastHeights: {}, // No heights available
+        allToastHeights: {},
         orderedToastIds: ['toast-1'],
       });
 
       // Should use ESTIMATED_TOAST_HEIGHT (70) from the implementation
-      const expectedOffset = 70 + 14; // estimated height + gap
+      const expectedOffset = 70 + 14;
       expect(result).toBe(expectedOffset);
     });
 

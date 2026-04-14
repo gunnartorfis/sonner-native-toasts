@@ -1,4 +1,6 @@
 import { toastStore } from '../toast-store';
+import type { ToastRef } from '../types';
+import type React from 'react';
 
 // Mock React createRef
 jest.mock('react', () => ({
@@ -11,11 +13,13 @@ describe('ToastStore', () => {
     // Reset the store state before each test
     toastStore['state'] = {
       toasts: [],
+      toastsById: new Map(),
       toastsCounter: 1,
       toastRefs: {},
       shouldShowOverlay: false,
       toastTimers: {},
       toastHeights: {},
+      toastHeightsVersion: 0,
       isExpanded: false,
     };
     toastStore['config'] = {};
@@ -41,8 +45,8 @@ describe('ToastStore', () => {
       expect(state.toasts[0]).toMatchObject({
         id: 1,
         title: 'Test Toast',
-        variant: 'info', // Default variant from constants
-        numberOfToasts: 1,
+        variant: 'info',
+        numberOfToasts: 0, // Set at render time, not by store
         index: 0,
       });
       expect(id).toBe(1);
@@ -81,7 +85,7 @@ describe('ToastStore', () => {
         success: (data: unknown) => `Success: ${data}`,
         error: 'Failed',
         loading: 'Loading...',
-      } as any;
+      };
 
       toastStore.addToast({
         id: 'promise-toast',
@@ -110,10 +114,10 @@ describe('ToastStore', () => {
       const mockPromise = Promise.reject(mockError);
       const promiseOptions = {
         promise: mockPromise,
-        success: (_result: unknown) => 'Success',
-        error: (error: Error) => `Error: ${error.message}`,
+        success: () => 'Success',
+        error: (error: unknown) => `Error: ${(error as Error).message}`,
         loading: 'Loading...',
-      } as any;
+      };
 
       toastStore.addToast({
         id: 'promise-toast',
@@ -328,32 +332,28 @@ describe('ToastStore', () => {
       expect(state.toastHeights['test-id']).toBe(75);
     });
 
-    it('should get toast height', () => {
+    it('should get toast height from state', () => {
       toastStore.setToastHeight('test-id', 80);
 
-      const height = toastStore.getToastHeight('test-id');
-      expect(height).toBe(80);
+      const state = toastStore.getSnapshot();
+      expect(state.toastHeights['test-id']).toBe(80);
     });
 
-    it('should return 0 for unknown toast height', () => {
-      const height = toastStore.getToastHeight('unknown-id');
-      expect(height).toBe(0);
+    it('should return undefined for unknown toast height', () => {
+      const state = toastStore.getSnapshot();
+      expect(state.toastHeights['unknown-id']).toBeUndefined();
     });
 
-    it('should get newest toast height', () => {
+    it('should track heights for multiple toasts', () => {
       toastStore.addToast({ id: 'toast-1', title: 'Toast 1', variant: 'info' as const });
       toastStore.addToast({ id: 'toast-2', title: 'Toast 2', variant: 'info' as const });
 
       toastStore.setToastHeight('toast-1', 60);
       toastStore.setToastHeight('toast-2', 70);
 
-      const newestHeight = toastStore.getNewestToastHeight();
-      expect(newestHeight).toBe(70); // toast-2 is the newest
-    });
-
-    it('should return 0 for newest toast height when no toasts', () => {
-      const newestHeight = toastStore.getNewestToastHeight();
-      expect(newestHeight).toBe(0);
+      const state = toastStore.getSnapshot();
+      expect(state.toastHeights['toast-1']).toBe(60);
+      expect(state.toastHeights['toast-2']).toBe(70);
     });
   });
 
@@ -423,12 +423,12 @@ describe('ToastStore', () => {
   describe('wiggle functionality', () => {
     it('should call wiggle on toast ref when available', () => {
       const mockWiggle = jest.fn();
-      const mockRef = { current: { wiggle: mockWiggle } };
+      const mockRef: React.RefObject<ToastRef | null> = { current: { wiggle: mockWiggle } };
 
       const id = toastStore.addToast({ title: 'Test Toast', variant: 'info' as const });
 
       // Manually set the ref (normally done by React)
-      toastStore['state'].toastRefs[id] = mockRef as any;
+      toastStore['state'].toastRefs[id] = mockRef;
 
       toastStore.wiggleToast(id);
 
@@ -478,10 +478,10 @@ describe('ToastStore', () => {
         variant: 'loading' as const,
         promiseOptions: {
           promise: new Promise(() => {}), // Never resolving promise
-          success: (_result: unknown) => 'Success',
+          success: () => 'Success',
           error: 'Error',
           loading: 'Loading...',
-        } as any,
+        },
       });
 
       toastStore.wiggleToast(1); // Use the generated ID

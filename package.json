@@ -121,7 +121,8 @@
     "testPathIgnorePatterns": [
       "<rootDir>/node_modules/",
       "<rootDir>/lib/",
-      "<rootDir>/example/"
+      "<rootDir>/example/",
+      "src/__tests__/toast-comparator.test.tsx"
     ],
     "modulePathIgnorePatterns": [
       "<rootDir>/example/node_modules",

@@ -80,20 +80,51 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 // Mock react-native-gesture-handler
-jest.mock('react-native-gesture-handler', () => ({
-  Gesture: {
-    Pan: jest.fn(() => ({
-      onBegin: jest.fn(() => ({})),
-      onChange: jest.fn(() => ({})),
-      onFinalize: jest.fn(() => ({})),
-    })),
-    Tap: jest.fn(() => ({
-      onEnd: jest.fn(() => ({})),
-    })),
-    Race: jest.fn(),
-  },
-  GestureDetector: ({ children }: { children: React.ReactNode }) => children,
-}));
+jest.mock('react-native-gesture-handler', () => {
+  const createChainablePanMock = () => {
+    const mock: Record<string, jest.Mock> = {};
+    const chainable = (name: string) => {
+      mock[name] = jest.fn(() => mock);
+    };
+    chainable('onBegin');
+    chainable('onChange');
+    chainable('onFinalize');
+    chainable('onEnd');
+    chainable('onStart');
+    chainable('onUpdate');
+    chainable('enabled');
+    chainable('activeOffsetX');
+    chainable('activeOffsetY');
+    chainable('failOffsetX');
+    chainable('failOffsetY');
+    chainable('minDistance');
+    return mock;
+  };
+
+  const createChainableTapMock = () => {
+    const mock: Record<string, jest.Mock> = {};
+    const chainable = (name: string) => {
+      mock[name] = jest.fn(() => mock);
+    };
+    chainable('onEnd');
+    chainable('onStart');
+    chainable('onBegin');
+    chainable('onFinalize');
+    chainable('enabled');
+    chainable('maxDuration');
+    chainable('numberOfTaps');
+    return mock;
+  };
+
+  return {
+    Gesture: {
+      Pan: jest.fn(() => createChainablePanMock()),
+      Tap: jest.fn(() => createChainableTapMock()),
+      Race: jest.fn(),
+    },
+    GestureDetector: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
 
 // Mock console to avoid unnecessary noise in tests
 global.console = {
