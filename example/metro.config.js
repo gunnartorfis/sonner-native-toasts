@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 const { withMetroConfig } = require('react-native-monorepo-config');
@@ -23,5 +25,7 @@ config.watchFolders = [
 ];
 
 config.resolver.unstable_enablePackageExports = true;
+
+delete config.watcher.unstable_workerThreads;
 
 module.exports = config;

@@ -1,10 +1,10 @@
 {
   "extends": "../tsconfig",
-  "compilerOptions": {},
+  "compilerOptions": {
+    "moduleSuffixes": [".ios", ".android", ""]
+  },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ]
 }

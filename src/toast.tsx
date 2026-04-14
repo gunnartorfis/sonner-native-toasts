@@ -171,7 +171,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       numberOfToasts
     );
 
-    const stackGap = toastDefaultValues.stackGap;
+    const stackGap = gap ?? toastDefaultValues.stackGap;
     const yPosition = useToastPosition({
       id,
       index,
@@ -341,17 +341,27 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
         if (
           enableStacking &&
           numberOfToasts > 1 &&
-          !isPressNearCloseButton({
-            x,
-            viewWidth: Dimensions.get('window').width,
-          }) &&
           pressToastPosition !== 'center'
         ) {
-          toggleExpand();
+          if (
+            isPressNearCloseButton({
+              x,
+              viewWidth: Dimensions.get('window').width,
+            })
+          ) {
+            // On Android, the RNGH Tap gesture intercepts the touch before
+            // it reaches the native Pressable (close button). Dismiss
+            // explicitly when tapping the close button area while expanded.
+            if (isExpanded && closeButton && dismissible) {
+              onDismiss?.(id);
+            }
+          } else {
+            toggleExpand();
+          }
         }
         onPress?.();
       },
-      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress]
+      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress, isExpanded, closeButton, dismissible, onDismiss, id]
     );
 
     const toastSwipeHandlerProps = React.useMemo(
@@ -365,7 +375,6 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
         unstyled,
         important,
         position,
-        numberOfToasts,
       }),
       [
         onRemove,
@@ -379,14 +388,17 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
         unstyled,
         important,
         position,
-        numberOfToasts,
       ]
     );
 
+    const stackZIndex = toastPosition === 'top-center'
+      ? -(index + 1)
+      : -(numberOfToasts - index);
+
     if (jsx) {
       return (
-        <ToastSwipeHandler {...toastSwipeHandlerProps} index={index}>
-          <Animated.View style={absolutePositionStyle}>
+        <Animated.View style={[absolutePositionStyle, { zIndex: stackZIndex }]}>
+          <ToastSwipeHandler {...toastSwipeHandlerProps}>
             <Animated.View
               ref={toastRef}
 
@@ -395,8 +407,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
             >
               {jsx}
             </Animated.View>
-          </Animated.View>
-        </ToastSwipeHandler>
+          </ToastSwipeHandler>
+        </Animated.View>
       );
     }
 
@@ -412,12 +424,10 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       : undefined;
 
     return (
-      <ToastSwipeHandler
-        {...toastSwipeHandlerProps}
-        index={index}
-        numberOfToasts={numberOfToasts}
-      >
-        <Animated.View style={absolutePositionStyle}>
+      <Animated.View style={[absolutePositionStyle, { zIndex: stackZIndex }]}>
+        <ToastSwipeHandler
+          {...toastSwipeHandlerProps}
+        >
           <Animated.View
             style={wiggleAnimationStyle}
           >
@@ -561,8 +571,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
               </View>
             </Animated.View>
           </Animated.View>
-        </Animated.View>
-      </ToastSwipeHandler>
+        </ToastSwipeHandler>
+      </Animated.View>
     );
   }
 );

@@ -81,3 +81,6 @@ example/android
 example/expo-env.d.ts
 
 docs/.envrc
+
+# Claude Code
+.claude/
