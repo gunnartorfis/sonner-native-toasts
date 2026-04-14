@@ -19,6 +19,7 @@ const RootLayout: React.FC = () => {
     autoWiggle,
     richColors,
     invert,
+    gap,
   } = useToasterParams();
 
   return (
@@ -71,6 +72,7 @@ const RootLayout: React.FC = () => {
           enableStacking={stackingEnabled}
           richColors={richColors}
           invert={invert}
+          gap={gap}
           icons={{
             error: <Text>💥</Text>,
             loading: <Text>🔄</Text>,

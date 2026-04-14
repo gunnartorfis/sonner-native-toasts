@@ -171,7 +171,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       numberOfToasts
     );
 
-    const stackGap = toastDefaultValues.stackGap;
+    const stackGap = gap ?? toastDefaultValues.stackGap;
     const yPosition = useToastPosition({
       id,
       index,

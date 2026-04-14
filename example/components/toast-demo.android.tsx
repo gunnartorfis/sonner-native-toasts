@@ -115,6 +115,7 @@ const ToastDemo: React.FC = () => {
     autoWiggle,
     richColors,
     invert,
+    gap,
     setParam,
   } = useToasterParams();
 
@@ -188,6 +189,19 @@ const ToastDemo: React.FC = () => {
                 value: n,
               }))}
               onSelect={(v) => setParam('visibleToasts', v)}
+            />
+            <HorizontalDivider />
+            <PickerRow
+              label="Gap"
+              value={String(gap ?? 'default')}
+              options={[
+                { label: 'Default', value: 'default' },
+                ...['2', '4', '8', '16', '24', '32'].map((n) => ({
+                  label: n,
+                  value: n,
+                })),
+              ]}
+              onSelect={(v) => setParam('gap', v === 'default' ? '' : v)}
             />
             <HorizontalDivider />
             <SwitchRow

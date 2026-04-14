@@ -18,6 +18,7 @@ export function useToasterParams() {
     autoWiggle?: string;
     richColors?: string;
     invert?: string;
+    gap?: string;
   }>();
 
   const position = (params.position as ToastPosition) || 'top-center';
@@ -30,6 +31,7 @@ export function useToasterParams() {
   const autoWiggle = (params.autoWiggle as AutoWiggle) || 'toast-change';
   const richColors = params.richColors === 'true';
   const invert = params.invert === 'true';
+  const gap = params.gap ? parseInt(params.gap, 10) : undefined;
 
   const setParam = (key: string, value: string) => {
     router.setParams({ [key]: value });
@@ -45,6 +47,7 @@ export function useToasterParams() {
     autoWiggle,
     richColors,
     invert,
+    gap,
     setParam,
   };
 }

@@ -30,6 +30,7 @@ const ToastDemo: React.FC = () => {
     autoWiggle,
     richColors,
     invert,
+    gap,
     setParam,
   } = useToasterParams();
 
@@ -101,6 +102,21 @@ const ToastDemo: React.FC = () => {
             modifiers={[pickerStyle('menu')]}
           >
             {['1', '2', '3', '4', '5'].map((n) => (
+              <SwiftUIText key={n} modifiers={[tag(n)]}>
+                {n}
+              </SwiftUIText>
+            ))}
+          </Picker>
+          <Picker
+            label="Gap"
+            selection={String(gap ?? 'default')}
+            onSelectionChange={(v) =>
+              setParam('gap', v === 'default' ? '' : (v as string))
+            }
+            modifiers={[pickerStyle('menu')]}
+          >
+            <SwiftUIText modifiers={[tag('default')]}>Default</SwiftUIText>
+            {['2', '4', '8', '16', '24', '32'].map((n) => (
               <SwiftUIText key={n} modifiers={[tag(n)]}>
                 {n}
               </SwiftUIText>
