@@ -57,6 +57,7 @@ toast.promise = <T,>(promise: Promise<T>, options: Parameters<typeof toastType.p
       loading,
       success: success as (result: unknown) => string,
       error,
+      styles: options.styles,
     },
   });
 };

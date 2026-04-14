@@ -178,6 +178,7 @@ class ToastStore {
         variant: 'success',
         promiseOptions: undefined,
         duration: toast.duration,
+        styles: promiseOptions.styles?.success,
       });
     } catch (error) {
       if (!this.state.toastsById.has(id)) return;
@@ -191,6 +192,7 @@ class ToastStore {
         variant: 'error',
         promiseOptions: undefined,
         duration: toast.duration,
+        styles: promiseOptions.styles?.error,
       });
     } finally {
       this.promiseResolvers.delete(id);

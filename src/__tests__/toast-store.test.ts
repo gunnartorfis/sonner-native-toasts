@@ -23,6 +23,7 @@ describe('ToastStore', () => {
       isExpanded: false,
     };
     toastStore['config'] = {};
+    toastStore['subscribers'] = new Set();
     toastStore['promiseResolvers'] = new Map();
     jest.clearAllTimers();
   });
