@@ -1,54 +1,78 @@
-import React from 'react';
-import { View, type ViewStyle } from 'react-native';
+import React, { useContext } from 'react';
+import { Platform, Pressable, View } from 'react-native';
+import {
+  SafeAreaInsetsContext,
+  initialWindowMetrics,
+} from 'react-native-safe-area-context';
+import { useDynamicToastContext, useToastContext } from './context';
+import {
+  calculateOutsidePressableArea,
+  getContainerStyle,
+  getInsetValues,
+} from './positioner-utils';
 import type { ToasterProps } from './types';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useToastContext } from './context';
+
+const fallbackInsets = initialWindowMetrics?.insets ?? {
+  top: 0,
+  bottom: 0,
+  left: 0,
+  right: 0,
+};
+
+const useInsets = () => {
+  return useContext(SafeAreaInsetsContext) ?? fallbackInsets;
+};
 
 export const Positioner: React.FC<
   React.PropsWithChildren<Pick<ToasterProps, 'position' | 'style'>>
 > = ({ children, position, style, ...props }) => {
-  const { offset } = useToastContext();
-  const { top, bottom } = useSafeAreaInsets();
+  const { offset, gap, visibleToasts } = useToastContext();
+  const { isExpanded, collapse, toastHeights } = useDynamicToastContext();
+  const { top, bottom } = useInsets();
 
-  const getContainerStyle = (): ViewStyle => {
-    if (position === 'center') {
-      return {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-      };
+  const resolvedPosition = position || 'bottom-center';
+  const containerStyle = getContainerStyle(resolvedPosition);
+
+  const insetValues = getInsetValues({
+    position: resolvedPosition,
+    offset,
+    safeAreaInsets: { top, bottom },
+  });
+
+  const handleOutsidePress = React.useCallback(() => {
+    if (isExpanded) {
+      collapse();
     }
+  }, [isExpanded, collapse]);
 
-    return {
-      position: 'absolute',
-      width: '100%',
-      alignItems: 'center',
-    };
-  };
+  const outsidePressableStyle = calculateOutsidePressableArea({
+    position: resolvedPosition,
+    toastHeights,
+    gap,
+    visibleToasts: visibleToasts || 3,
+    insetValues,
+  });
 
-  const getInsetValues = () => {
-    if (position === 'bottom-center') {
-      return { bottom: offset || bottom || 40 };
-    }
+  // Don't show expand/collapse for center position
+  const shouldAllowCollapse = resolvedPosition !== 'center' && isExpanded;
 
-    if (position === 'top-center') {
-      return { top: offset || top || 40 };
-    }
-
-    return {};
-  };
+  const hasChildren = React.Children.count(children) > 0;
 
   return (
-    <View
-      style={[getContainerStyle(), getInsetValues(), style]}
-      pointerEvents="box-none"
-      {...props}
-    >
-      {children}
-    </View>
+    <>
+      {/* Outside pressable area - positioned outside the toast stack */}
+      {shouldAllowCollapse && (
+        <Pressable style={outsidePressableStyle} onPress={handleOutsidePress} />
+      )}
+      <View
+        style={[containerStyle, insetValues, style]}
+        pointerEvents={
+          Platform.OS === 'android' && !hasChildren ? 'none' : 'box-none'
+        }
+        {...props}
+      >
+        {children}
+      </View>
+    </>
   );
 };

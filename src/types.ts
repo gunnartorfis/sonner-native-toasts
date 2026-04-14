@@ -1,19 +1,23 @@
 import type React from 'react';
 import type { TextStyle, ViewProps, ViewStyle } from 'react-native';
 
+export type ToastStyles = {
+  toastContainer?: ViewStyle;
+  toast?: ViewStyle;
+  toastContent?: ViewStyle;
+  textContainer?: ViewStyle;
+  title?: TextStyle;
+  description?: TextStyle;
+  buttons?: ViewStyle;
+  closeButton?: ViewStyle;
+  closeButtonIcon?: ViewStyle;
+};
+
 type StyleProps = {
   unstyled?: boolean;
   style?: ViewStyle;
-  styles?: {
-    toastContainer?: ViewStyle;
-    toast?: ViewStyle;
-    toastContent?: ViewStyle;
-    title?: TextStyle;
-    description?: TextStyle;
-    buttons?: ViewStyle;
-    closeButton?: ViewStyle;
-    closeButtonIcon?: ViewStyle;
-  };
+  styles?: ToastStyles;
+  backgroundComponent?: React.ReactNode;
 };
 
 type PromiseOptions<T = unknown> = {
@@ -21,6 +25,11 @@ type PromiseOptions<T = unknown> = {
   success: (result: T) => string;
   error: ((error: unknown) => string) | string;
   loading: string;
+  styles?: {
+    loading?: ToastStyles;
+    success?: ToastStyles;
+    error?: ToastStyles;
+  };
 };
 
 export type ToastPosition = 'top-center' | 'bottom-center' | 'center';
@@ -40,8 +49,11 @@ export type ToastAction = {
 
 export type ToastProps = StyleProps & {
   id: string | number;
+  index: number;
   title: string;
   variant: ToastVariant;
+  numberOfToasts: number;
+  orderedToastIds: Array<string | number>;
   jsx?: React.ReactNode;
   description?: string;
   invert?: boolean;
@@ -72,12 +84,23 @@ export type ToastRef = {
 export function isToastAction(
   action: ToastAction | React.ReactNode
 ): action is ToastAction {
-  return (action as ToastAction)?.onClick !== undefined;
+  return (
+    (action as ToastAction)?.onClick !== undefined &&
+    (action as ToastAction)?.label !== undefined
+  );
 }
 
 type ExternalToast = Omit<
   ToastProps,
-  'id' | 'type' | 'title' | 'jsx' | 'promise' | 'variant'
+  | 'id'
+  | 'type'
+  | 'title'
+  | 'jsx'
+  | 'promise'
+  | 'variant'
+  | 'index'
+  | 'numberOfToasts'
+  | 'orderedToastIds'
 > & {
   id?: string | number;
 };
@@ -93,6 +116,7 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
   offset?: number;
   autoWiggleOnUpdate?: AutoWiggle;
   style?: ViewStyle;
+  positionerStyle?: ViewStyle;
   // dir?: 'ltr' | 'rtl'; (ltr)
   // hotkey?: string; // hotkeys not supported on mobile
   invert?: boolean;
@@ -110,6 +134,13 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
     buttonsStyle?: ViewStyle;
     closeButtonStyle?: ViewStyle;
     closeButtonIconStyle?: ViewStyle;
+    textContainerStyle?: ViewStyle;
+    backgroundComponent?: React.ReactNode;
+    success?: ViewStyle;
+    error?: ViewStyle;
+    warning?: ViewStyle;
+    info?: ViewStyle;
+    loading?: ViewStyle;
   };
   gap?: number;
   loadingIcon?: React.ReactNode;
@@ -124,6 +155,7 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
   };
   swipeToDismissDirection?: ToastSwipeDirection;
   pauseWhenPageIsHidden?: boolean;
+  enableStacking?: boolean;
   ToasterOverlayWrapper?: React.ComponentType<{ children: React.ReactNode }>;
   ToastWrapper?: React.ComponentType<
     ViewProps & {
@@ -134,10 +166,10 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
 };
 
 export type AddToastContextHandler = (
-  data: Omit<ToastProps, 'id'> & { id?: string | number }
+  data: Omit<ToastProps, 'id' | 'index' | 'numberOfToasts' | 'orderedToastIds'> & { id?: string | number }
 ) => string | number;
 
-export type ToasterContextType = Required<
+export type StableToastContextType = Required<
   Pick<
     ToasterProps,
     | 'duration'
@@ -154,10 +186,25 @@ export type ToasterContextType = Required<
     | 'autoWiggleOnUpdate'
     | 'richColors'
     | 'unstyled'
+    | 'enableStacking'
+    | 'visibleToasts'
   >
 > & {
   addToast: AddToastContextHandler;
 };
+
+export type DynamicToastContextType = {
+  toastHeights: Record<string | number, number>;
+  toastHeightsVersion: number;
+  isExpanded: boolean;
+  expand: () => void;
+  collapse: () => void;
+  toggleExpand: () => void;
+};
+
+/** @deprecated Use StableToastContextType & DynamicToastContextType */
+export type ToasterContextType = StableToastContextType &
+  DynamicToastContextType;
 
 export declare const toast: ((
   message: string,

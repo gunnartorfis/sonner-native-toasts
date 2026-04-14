@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ANIMATION_DURATION } from './animations';
+import { ENTERING_ANIMATION_DURATION } from './animations';
 import { toastDefaultValues } from './constants';
 import { areToastsEqual } from './toast-comparator';
 import type { ToastProps, ToastRef } from './types';
@@ -13,10 +13,14 @@ type ToastTimer = {
 
 type ToastStoreState = {
   toasts: ToastProps[];
+  toastsById: Map<string | number, ToastProps>;
   toastsCounter: number;
   toastRefs: Record<string | number, React.RefObject<ToastRef | null>>;
   shouldShowOverlay: boolean;
   toastTimers: Record<string | number, ToastTimer>;
+  toastHeights: Record<string | number, number>;
+  toastHeightsVersion: number;
+  isExpanded: boolean;
 };
 
 type Subscriber = () => void;
@@ -31,16 +35,22 @@ type ToastStoreConfig = {
 class ToastStore {
   private state: ToastStoreState = {
     toasts: [],
+    toastsById: new Map(),
     toastsCounter: 1,
     toastRefs: {},
     shouldShowOverlay: false,
     toastTimers: {},
+    toastHeights: {},
+    toastHeightsVersion: 0,
+    isExpanded: false,
   };
 
   private subscribers = new Set<Subscriber>();
   private config: ToastStoreConfig = {};
   private hideOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
   private promiseResolvers = new Map<string | number, boolean>();
+  private collapseCooldown = false;
+  private collapseCooldownTimeout: ReturnType<typeof setTimeout> | null = null;
 
   subscribe = (callback: Subscriber) => {
     this.subscribers.add(callback);
@@ -61,6 +71,10 @@ class ToastStore {
     this.subscribers.forEach((callback) => callback());
   };
 
+  private cloneIndex = (): Map<string | number, ToastProps> => {
+    return new Map(this.state.toastsById);
+  };
+
   private startTimer = ({
     id,
     duration,
@@ -75,13 +89,12 @@ class ToastStore {
       return;
     }
 
-    // Clear existing timer if any
     this.clearTimer(id);
 
     const timeout = setTimeout(() => {
       onComplete();
       delete this.state.toastTimers[id];
-    }, ANIMATION_DURATION + duration);
+    }, ENTERING_ANIMATION_DURATION + duration);
 
     this.state.toastTimers[id] = {
       timeout,
@@ -111,33 +124,33 @@ class ToastStore {
 
   resumeTimer = (id: string | number) => {
     const timer = this.state.toastTimers[id];
-    const toast = this.state.toasts.find((t) => t.id === id);
+    if (!timer || !timer.isPaused) return;
 
-    if (timer && timer.isPaused && toast) {
-      timer.isPaused = false;
-      timer.startTime = Date.now();
+    const toast = this.state.toastsById.get(id);
+    if (!toast) return;
 
-      timer.timeout = setTimeout(
-        () => {
-          toast.onAutoClose?.(id);
-          this.dismissToast(id, 'onAutoClose');
-          delete this.state.toastTimers[id];
-        },
-        Math.max(timer.remainingTime, 1000)
-      ); // minimum 1 second
-    }
+    timer.isPaused = false;
+    timer.startTime = Date.now();
+
+    timer.timeout = setTimeout(
+      () => {
+        this.dismissToast(id, 'onAutoClose');
+        delete this.state.toastTimers[id];
+      },
+      Math.max(timer.remainingTime, 1000)
+    );
   };
 
   pauseAllTimers = () => {
-    Object.keys(this.state.toastTimers).forEach((id) => {
-      this.pauseTimer(id);
-    });
+    for (const toast of this.state.toastsById.values()) {
+      this.pauseTimer(toast.id);
+    }
   };
 
   resumeAllTimers = () => {
-    Object.keys(this.state.toastTimers).forEach((id) => {
-      this.resumeTimer(id);
-    });
+    for (const toast of this.state.toastsById.values()) {
+      this.resumeTimer(toast.id);
+    }
   };
 
   private handlePromise = async (toast: ToastProps) => {
@@ -157,7 +170,8 @@ class ToastStore {
     try {
       const data = await promiseOptions.promise;
 
-      // Update the toast with success
+      if (!this.state.toastsById.has(id)) return;
+
       this.addToast({
         title: promiseOptions.success(data) ?? 'Success',
         id,
@@ -166,7 +180,8 @@ class ToastStore {
         duration: toast.duration,
       });
     } catch (error) {
-      // Update the toast with error
+      if (!this.state.toastsById.has(id)) return;
+
       this.addToast({
         title:
           typeof promiseOptions.error === 'function'
@@ -183,7 +198,12 @@ class ToastStore {
   };
 
   addToast = (
-    options: Omit<ToastProps, 'id'> & { id?: string | number }
+    options: Omit<
+      ToastProps,
+      'id' | 'numberOfToasts' | 'index' | 'orderedToastIds'
+    > & {
+      id?: string | number;
+    }
   ): string | number => {
     const hasValidId =
       typeof options?.id === 'number' ||
@@ -205,13 +225,15 @@ class ToastStore {
       id,
       variant: options.variant ?? toastDefaultValues.variant,
       duration,
+      // These are set by toaster.tsx at render time; defaults here for type satisfaction
+      numberOfToasts: 0,
+      index: 0,
+      orderedToastIds: [],
     };
 
-    const existingToast = this.state.toasts.find(
-      (currentToast) => currentToast.id === newToast.id
-    );
+    const existingToast = this.state.toastsById.get(newToast.id);
 
-    const shouldUpdate = existingToast && options?.id;
+    const shouldUpdate = existingToast && options?.id !== undefined;
 
     if (shouldUpdate) {
       const shouldWiggle =
@@ -219,7 +241,7 @@ class ToastStore {
         (this.config.autoWiggleOnUpdate === 'toast-change' &&
           !areToastsEqual(newToast, existingToast));
 
-      if (shouldWiggle && options.id) {
+      if (shouldWiggle && options.id !== undefined) {
         this.wiggleToast(options.id);
       }
 
@@ -241,15 +263,19 @@ class ToastStore {
           id,
           duration,
           onComplete: () => {
-            newToast.onAutoClose?.(id);
             this.dismissToast(id, 'onAutoClose');
           },
         });
       }
 
+      const updatedIndex = this.cloneIndex();
+      const updatedEntry = updatedToasts.find((t) => t.id === options.id);
+      if (updatedEntry) updatedIndex.set(options.id!, updatedEntry);
+
       this.state = {
         ...this.state,
         toasts: updatedToasts,
+        toastsById: updatedIndex,
         shouldShowOverlay: true,
       };
     } else {
@@ -262,17 +288,31 @@ class ToastStore {
 
       const visibleToasts =
         this.config.visibleToasts ?? toastDefaultValues.visibleToasts;
+      const newIndex = this.cloneIndex();
+      newIndex.set(newToast.id, newToast);
+      const updatedHeights = { ...this.state.toastHeights };
+      let heightsChanged = false;
       if (newToasts.length > visibleToasts) {
         const removedToast = newToasts.shift();
         if (removedToast) {
           this.clearTimer(removedToast.id);
+          newIndex.delete(removedToast.id);
+          if (removedToast.id in updatedHeights) {
+            delete updatedHeights[removedToast.id];
+            heightsChanged = true;
+          }
         }
       }
 
       this.state = {
         ...this.state,
         toasts: newToasts,
+        toastsById: newIndex,
         toastRefs: newToastRefs,
+        toastHeights: heightsChanged ? updatedHeights : this.state.toastHeights,
+        toastHeightsVersion: heightsChanged
+          ? this.state.toastHeightsVersion + 1
+          : this.state.toastHeightsVersion,
         toastsCounter: nextCounter,
         shouldShowOverlay: true,
       };
@@ -286,14 +326,12 @@ class ToastStore {
           id,
           duration,
           onComplete: () => {
-            newToast.onAutoClose?.(id);
             this.dismissToast(id, 'onAutoClose');
           },
         });
       }
     }
 
-    // Show overlay when toasts are added
     if (this.hideOverlayTimeout) {
       clearTimeout(this.hideOverlayTimeout);
       this.hideOverlayTimeout = null;
@@ -307,13 +345,9 @@ class ToastStore {
     id: string | number | undefined,
     origin?: 'onDismiss' | 'onAutoClose'
   ): string | number | undefined => {
-    if (!id) {
-      // Clear all timers
-      Object.keys(this.state.toastTimers).forEach((timerId) => {
-        this.clearTimer(timerId);
-      });
-
+    if (id == null) {
       this.state.toasts.forEach((currentToast) => {
+        this.clearTimer(currentToast.id);
         if (origin === 'onDismiss') {
           currentToast.onDismiss?.(currentToast.id);
         } else {
@@ -324,8 +358,12 @@ class ToastStore {
       this.state = {
         ...this.state,
         toasts: [],
+        toastsById: new Map(),
         toastsCounter: 1,
         toastTimers: {},
+        toastHeights: {},
+        toastHeightsVersion: this.state.toastHeightsVersion + 1,
+        isExpanded: false,
       };
       this.scheduleHideOverlay();
       this.notify();
@@ -335,18 +373,33 @@ class ToastStore {
     // Clear timer for this specific toast
     this.clearTimer(id);
 
-    const toastForCallback = this.state.toasts.find(
-      (currentToast) => currentToast.id === id
-    );
+    const toastForCallback = this.state.toastsById.get(id);
 
     const filteredToasts = this.state.toasts.filter(
       (currentToast) => currentToast.id !== id
     );
 
+    const updatedHeights = { ...this.state.toastHeights };
+    delete updatedHeights[id];
+
+    const shouldAutoCollapse =
+      filteredToasts.length <= 1 && this.state.isExpanded;
+
+    const updatedIndex = this.cloneIndex();
+    updatedIndex.delete(id);
+
     this.state = {
       ...this.state,
       toasts: filteredToasts,
+      toastsById: updatedIndex,
+      toastHeights: updatedHeights,
+      toastHeightsVersion: this.state.toastHeightsVersion + 1,
+      isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
     };
+
+    if (shouldAutoCollapse) {
+      this.resumeAllTimers();
+    }
 
     if (origin === 'onDismiss') {
       toastForCallback?.onDismiss?.(id);
@@ -376,11 +429,11 @@ class ToastStore {
       };
       this.hideOverlayTimeout = null;
       this.notify();
-    }, ANIMATION_DURATION);
+    }, ENTERING_ANIMATION_DURATION);
   };
 
   wiggleToast = (id: string | number) => {
-    const toast = this.state.toasts.find((t) => t.id === id);
+    const toast = this.state.toastsById.get(id);
     if (!toast) {
       return;
     }
@@ -398,7 +451,6 @@ class ToastStore {
         duration:
           toast.duration ?? this.config.duration ?? toastDefaultValues.duration,
         onComplete: () => {
-          toast.onAutoClose?.(id);
           this.dismissToast(id, 'onAutoClose');
         },
       });
@@ -409,6 +461,60 @@ class ToastStore {
     id: string | number
   ): React.RefObject<ToastRef | null> | undefined => {
     return this.state.toastRefs[id];
+  };
+
+  setToastHeight = (id: string | number, height: number) => {
+    if (this.state.toastHeights[id] === height) return;
+    this.state = {
+      ...this.state,
+      toastHeights: {
+        ...this.state.toastHeights,
+        [id]: height,
+      },
+      toastHeightsVersion: this.state.toastHeightsVersion + 1,
+    };
+    this.notify();
+  };
+
+  expand = () => {
+    this.state = {
+      ...this.state,
+      isExpanded: true,
+    };
+    // Pause all timers when expanded
+    this.pauseAllTimers();
+    this.notify();
+  };
+
+  collapse = () => {
+    this.state = {
+      ...this.state,
+      isExpanded: false,
+    };
+    // Prevent immediate re-expansion — flag clears after timeout
+    this.collapseCooldown = true;
+    if (this.collapseCooldownTimeout) {
+      clearTimeout(this.collapseCooldownTimeout);
+    }
+    this.collapseCooldownTimeout = setTimeout(() => {
+      this.collapseCooldown = false;
+      this.collapseCooldownTimeout = null;
+    }, 100);
+    // Resume all timers when collapsed
+    this.resumeAllTimers();
+    this.notify();
+  };
+
+  toggleExpand = () => {
+    if (!this.state.isExpanded && this.collapseCooldown) {
+      return;
+    }
+
+    if (this.state.isExpanded) {
+      this.collapse();
+    } else {
+      this.expand();
+    }
   };
 }
 

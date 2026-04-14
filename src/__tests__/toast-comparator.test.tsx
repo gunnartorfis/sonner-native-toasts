@@ -4,10 +4,12 @@ import { areToastsEqual } from '../toast-comparator';
 
 // Mock helper function to simulate a click handler
 const mockClickHandler = () => {};
+const base = { index: 0, numberOfToasts: 1, orderedToastIds: [] as (string | number)[] };
 
 describe('areToastsEqual', () => {
   it('should return true when all important properties are equal', () => {
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -21,6 +23,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -38,6 +41,7 @@ describe('areToastsEqual', () => {
 
   it('should return false when IDs are different', () => {
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -45,6 +49,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 2,
       title: 'Toast 1',
       variant: 'success',
@@ -56,6 +61,7 @@ describe('areToastsEqual', () => {
 
   it('should return false when titles are different', () => {
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -63,6 +69,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 2',
       variant: 'success',
@@ -74,6 +81,7 @@ describe('areToastsEqual', () => {
 
   it('should return false when variants are different', () => {
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -81,6 +89,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'error',
@@ -92,6 +101,7 @@ describe('areToastsEqual', () => {
 
   it('should return false when descriptions are different', () => {
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -99,6 +109,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -110,6 +121,7 @@ describe('areToastsEqual', () => {
 
   it('should return false when action labels are different', () => {
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -117,6 +129,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -130,6 +143,7 @@ describe('areToastsEqual', () => {
     const mockReactNode = <View />;
 
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -138,6 +152,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -150,6 +165,7 @@ describe('areToastsEqual', () => {
 
   it('should return false when cancel labels are different', () => {
     const toast1: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
@@ -157,6 +173,7 @@ describe('areToastsEqual', () => {
     };
 
     const toast2: ToastProps = {
+      ...base,
       id: 1,
       title: 'Toast 1',
       variant: 'success',
