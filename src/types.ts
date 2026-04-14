@@ -1,6 +1,5 @@
 import type React from 'react';
 import type { TextStyle, ViewProps, ViewStyle } from 'react-native';
-import type { SharedValue } from 'react-native-reanimated';
 
 export type ToastStyles = {
   toastContainer?: ViewStyle;
@@ -54,6 +53,7 @@ export type ToastProps = StyleProps & {
   title: string;
   variant: ToastVariant;
   numberOfToasts: number;
+  orderedToastIds: Array<string | number>;
   jsx?: React.ReactNode;
   description?: string;
   invert?: boolean;
@@ -84,7 +84,10 @@ export type ToastRef = {
 export function isToastAction(
   action: ToastAction | React.ReactNode
 ): action is ToastAction {
-  return (action as ToastAction)?.onClick !== undefined;
+  return (
+    (action as ToastAction)?.onClick !== undefined &&
+    (action as ToastAction)?.label !== undefined
+  );
 }
 
 type ExternalToast = Omit<
@@ -97,6 +100,7 @@ type ExternalToast = Omit<
   | 'variant'
   | 'index'
   | 'numberOfToasts'
+  | 'orderedToastIds'
 > & {
   id?: string | number;
 };
@@ -162,10 +166,10 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
 };
 
 export type AddToastContextHandler = (
-  data: Omit<ToastProps, 'id'> & { id?: string | number }
+  data: Omit<ToastProps, 'id' | 'index' | 'numberOfToasts' | 'orderedToastIds'> & { id?: string | number }
 ) => string | number;
 
-export type ToasterContextType = Required<
+export type StableToastContextType = Required<
   Pick<
     ToasterProps,
     | 'duration'
@@ -187,13 +191,20 @@ export type ToasterContextType = Required<
   >
 > & {
   addToast: AddToastContextHandler;
-  newestToastHeightShared: SharedValue<number>;
+};
+
+export type DynamicToastContextType = {
   toastHeights: Record<string | number, number>;
+  toastHeightsVersion: number;
   isExpanded: boolean;
   expand: () => void;
   collapse: () => void;
   toggleExpand: () => void;
 };
+
+/** @deprecated Use StableToastContextType & DynamicToastContextType */
+export type ToasterContextType = StableToastContextType &
+  DynamicToastContextType;
 
 export declare const toast: ((
   message: string,

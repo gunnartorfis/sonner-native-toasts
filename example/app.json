@@ -17,19 +17,22 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "reanimatedtoasts.example"
+      "bundleIdentifier": "com.gunnartorfis.sonnernativeexample"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "reanimatedtoasts.example"
+      "package": "com.gunnartorfis.sonnernativeexample"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router",
+      "expo-web-browser"
+    ]
   }
 }

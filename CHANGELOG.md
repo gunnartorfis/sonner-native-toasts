@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### ⚠ BREAKING CHANGES
+
+* **New Architecture required.** Toast height measurement uses synchronous `useLayoutEffect` + `getBoundingClientRect()` for flicker-free stacking. Old architecture is no longer supported.
+
+### Features
+
+* stacking toasts with scale/translate animations
+* tap to expand stacked toasts, outside press to collapse
+* `enableStacking` prop on `<Toaster>` (default: `true`)
+
 # [0.24.0](https://github.com/gunnartorfis/react-native-reanimated-toasts/compare/v0.23.1...v0.24.0) (2026-04-01)
 
 
