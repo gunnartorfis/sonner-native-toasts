@@ -84,3 +84,6 @@ docs/.envrc
 
 # Claude Code
 .claude/
+
+# Local Netlify folder
+.netlify
