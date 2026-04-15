@@ -49,6 +49,7 @@ To use this package, **you also need to install its peer dependencies**. Check o
 - [React Native Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/docs/)
 - [React Native Safe Area Context](https://docs.expo.dev/versions/latest/sdk/safe-area-context/)
 - [React Native SVG](https://github.com/software-mansion/react-native-svg)
+- [React Native Screens](https://github.com/software-mansion/react-native-screens)
 
 ## Usage
 
