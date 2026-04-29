@@ -10,7 +10,7 @@
 
 * stacking toasts with scale/translate animations
 * tap to expand stacked toasts, outside press to collapse
-* `enableStacking` prop on `<Toaster>` (default: `true`)
+* `enableStacking` prop on `<Toaster>` (default: `false`)
 
 # [0.24.0](https://github.com/gunnartorfis/react-native-reanimated-toasts/compare/v0.23.1...v0.24.0) (2026-04-01)
 
