@@ -44,6 +44,6 @@ export const toastDefaultValues: {
   theme: 'system',
   autoWiggleOnUpdate: 'never',
   richColors: false,
-  enableStacking: true,
+  enableStacking: false,
   stackGap: 8,
 };
