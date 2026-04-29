@@ -21,14 +21,8 @@ const EMPTY_ICONS: NonNullable<ToasterProps['icons']> = {};
 
 function orderToastsFromPosition(
   currentToasts: ToastProps[],
-  position: ToastPosition,
-  enableStacking: boolean
+  position: ToastPosition
 ): ToastProps[] {
-  if (enableStacking) {
-    return position === 'top-center'
-      ? currentToasts.slice().reverse()
-      : currentToasts;
-  }
   return position === 'top-center'
     ? currentToasts.slice().reverse()
     : currentToasts;
@@ -165,8 +159,8 @@ const ToasterUI: React.FC<
     [toastHeights, toastHeightsVersion, isExpanded]
   );
   const orderedToasts = React.useMemo(
-    () => orderToastsFromPosition(toasts, position, enableStacking),
-    [toasts, position, enableStacking]
+    () => orderToastsFromPosition(toasts, position),
+    [toasts, position]
   );
 
   const onDismiss = React.useCallback<
