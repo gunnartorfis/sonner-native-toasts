@@ -16,15 +16,14 @@ describe('animation-utils', () => {
       expect(result).toBe(50);
     });
 
-    it('should return 0 for center position', () => {
+    it('should return 50 for center position (mirrors bottom-center)', () => {
       const result = getEnteringTranslateY('center');
-      expect(result).toBe(0);
+      expect(result).toBe(50);
     });
 
-    it('should return 0 for any other position', () => {
-      // Test with an arbitrary position that should default to 0
+    it('should default to 50 for any other position', () => {
       const result = getEnteringTranslateY('bottom-left' as ToastPosition);
-      expect(result).toBe(0);
+      expect(result).toBe(50);
     });
   });
 
@@ -63,7 +62,7 @@ describe('animation-utils', () => {
         expect(result).toBe(150);
       });
 
-      it('should return 50 for center with single toast', () => {
+      it('should return 150 for center with single toast (mirrors bottom-center)', () => {
         const result = getExitingTranslateY({
           position: 'center',
           isHiddenByLimit: false,
@@ -71,7 +70,7 @@ describe('animation-utils', () => {
         stackGap: 8,
         });
 
-        expect(result).toBe(50);
+        expect(result).toBe(150);
       });
     });
 

@@ -6,11 +6,8 @@ export const getEnteringTranslateY = (position: ToastPosition): number => {
     return -20;
   }
 
-  if (position === 'bottom-center') {
-    return 50;
-  }
-
-  return 0;
+  // bottom-center and center share the same enter direction (slide up from below)
+  return 50;
 };
 
 export const getExitingTranslateY = ({
@@ -33,17 +30,12 @@ export const getExitingTranslateY = ({
     if (position === 'top-center') {
       return -150;
     }
-    if (position === 'bottom-center') {
-      return 150;
-    }
-    return 50;
+    // bottom-center and center
+    return 150;
   }
 
   if (position === 'top-center') {
     return -stackGap;
-  }
-  if (position === 'bottom-center') {
-    return stackGap;
   }
   return stackGap;
 };

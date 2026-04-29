@@ -30,9 +30,9 @@ describe('position-utils', () => {
       expect(result).toEqual(['toast-3', 'toast-2', 'toast-1']);
     });
 
-    it('should return reversed order for center without stacking', () => {
+    it('should return normal order for center without stacking (mirrors bottom-center)', () => {
       const result = getOrderedToastIds(mockToasts, 'center', false);
-      expect(result).toEqual(['toast-3', 'toast-2', 'toast-1']);
+      expect(result).toEqual(['toast-1', 'toast-2', 'toast-3']);
     });
   });
 
@@ -165,22 +165,35 @@ describe('position-utils', () => {
 
     describe('center position', () => {
       const position: ToastPosition = 'center';
+      // Center anchors at top:50% with -frontHeight/2 shift so the front toast
+      // is visually centered on the screen midline. Front = toast-3 (height 80).
+      const centerShift = -40;
 
-      it('should calculate correct position for stacking mode', () => {
+      it('should center the front toast on the screen midline', () => {
         const result = calculateToastPosition({
           ...baseParams,
-          index: 1,
+          index: 2,
           enableStacking: true,
           position,
         });
 
-        // Center stacking: offset from center
-        // offsetFromCenter = stackGap * (numberOfToasts - index - 1)
-        // = 8 * (3 - 1 - 1) = 8 * 1 = 8
-        expect(result).toBe(8);
+        // Front toast (index 2): bottom-center calc = 0, plus centerShift = -40
+        expect(result).toBe(centerShift);
       });
 
-      it('should calculate correct position for non-stacking mode', () => {
+      it('should mirror bottom-center stacking offsets behind the front', () => {
+        const result = calculateToastPosition({
+          ...baseParams,
+          index: 0,
+          enableStacking: true,
+          position,
+        });
+
+        // bottom-center calc for index 0 = -36, plus centerShift = -40
+        expect(result).toBe(centerShift + -36);
+      });
+
+      it('should mirror bottom-center non-stacking layout', () => {
         const result = calculateToastPosition({
           ...baseParams,
           index: 1,
@@ -188,13 +201,11 @@ describe('position-utils', () => {
           position,
         });
 
-        // Center non-stacking: sum heights for previous toasts
-        // Height of toast-1 = 60, gap = 14
-        const expectedOffset = 60 + 14;
-        expect(result).toBe(expectedOffset);
+        // bottom-center non-stacking for index 1 = -(80 + 14) = -94, plus shift
+        expect(result).toBe(centerShift + -(80 + 14));
       });
 
-      it('should use gap in center non-stacking mode even when expanded', () => {
+      it('should use stackGap in expanded mode like bottom-center', () => {
         const result = calculateToastPosition({
           ...baseParams,
           index: 1,
@@ -204,10 +215,7 @@ describe('position-utils', () => {
           stackGap: 8,
         });
 
-        // Center non-stacking always uses gap (not stackGap)
-        // Height of toast-1 = 60, gap = 14
-        const expectedOffset = 60 + 14;
-        expect(result).toBe(expectedOffset);
+        expect(result).toBe(centerShift + -(80 + 8));
       });
     });
 
