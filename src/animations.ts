@@ -1,4 +1,4 @@
-import { withTiming } from 'react-native-reanimated';
+import { useReducedMotion, withTiming } from 'react-native-reanimated';
 import { getEnteringTranslateY, getExitingTranslateY } from './animation-utils';
 import { toastDefaultValues } from './constants';
 import { useToastContext } from './context';
@@ -16,6 +16,11 @@ export const useToastLayoutAnimations = (
   const { position: positionCtx, gap } = useToastContext();
   const position = positionProp || positionCtx;
   const stackGap = gap ?? toastDefaultValues.stackGap;
+  const reducedMotion = useReducedMotion();
+
+  if (reducedMotion) {
+    return { entering: undefined, exiting: undefined };
+  }
 
   return {
     entering: () => {
@@ -24,7 +29,12 @@ export const useToastLayoutAnimations = (
     },
     exiting: () => {
       'worklet';
-      return getToastExiting({ position, isHiddenByLimit, numberOfToasts, stackGap });
+      return getToastExiting({
+        position,
+        isHiddenByLimit,
+        numberOfToasts,
+        stackGap,
+      });
     },
   };
 };
