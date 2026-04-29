@@ -29,9 +29,9 @@ function orderToastsFromPosition(
       ? currentToasts.slice().reverse()
       : currentToasts;
   }
-  return position === 'bottom-center'
-    ? currentToasts
-    : currentToasts.slice().reverse();
+  return position === 'top-center'
+    ? currentToasts.slice().reverse()
+    : currentToasts;
 }
 
 export const Toaster: React.FC<ToasterProps> = ({

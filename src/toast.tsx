@@ -209,7 +209,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       }
 
       const multiplier =
-        toastPosition === 'top-center' || toastPosition === 'center'
+        toastPosition === 'top-center'
           ? index
           : numberOfToasts - index - 1;
       const narrowAmount = stackGap * multiplier * 2;

@@ -12,11 +12,9 @@ describe('positioner-utils', () => {
 
       expect(result).toEqual({
         position: 'absolute',
-        top: 0,
-        bottom: 0,
+        top: '50%',
         left: 0,
         right: 0,
-        justifyContent: 'center',
         alignItems: 'center',
         overflow: 'visible',
       });
