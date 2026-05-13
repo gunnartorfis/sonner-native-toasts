@@ -2,77 +2,54 @@
 
 # [0.25.0](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.24.0...v0.25.0) (2026-04-29)
 
-
-### Bug Fixes
-
-* address PR feedback — pnpm CI, test sync, permissions ([f21702a](https://github.com/gunnartorfis/sonner-native-toasts/commit/f21702acc3290d72cb2255ffdcecd1c2cdf1e8e9))
-* address PR review feedback for stacking toasts ([e691fab](https://github.com/gunnartorfis/sonner-native-toasts/commit/e691faba893b3b3fbafbda1fe170945d864accb5))
-* address review issues in stacking toasts ([fa7586a](https://github.com/gunnartorfis/sonner-native-toasts/commit/fa7586a5e56dba292c4a60ceb288a7131d8d7239))
-* always measure toast heights, remove marginBottom ([53c680b](https://github.com/gunnartorfis/sonner-native-toasts/commit/53c680ba899cc41f06b756057a15d4fb691c81e6))
-* anchor center position at vertical midline and mirror bottom stacking ([7fa14b0](https://github.com/gunnartorfis/sonner-native-toasts/commit/7fa14b0bac8b8b0071caf740744fa0481da103df))
-* bottom-center toast safe area positioning ([c7b5f17](https://github.com/gunnartorfis/sonner-native-toasts/commit/c7b5f1778e146d05322290a237510a714f6e4f73))
-* cache pnpm store instead of node_modules ([c5fb58b](https://github.com/gunnartorfis/sonner-native-toasts/commit/c5fb58b210d3f9983f4b9403989053fd8bef281c))
-* **ci:** use shared setup action and Node 22 in test workflow ([7e4dc7a](https://github.com/gunnartorfis/sonner-native-toasts/commit/7e4dc7aa04b184c53aa0c00eb0345f53f7a3494a))
-* clean up stale toastHeights entry on shift() removal ([1964fd0](https://github.com/gunnartorfis/sonner-native-toasts/commit/1964fd0fd5e33fc92672f6c49cec3aef1482f9ff))
-* configure git identity for docusaurus deploy ([cf19276](https://github.com/gunnartorfis/sonner-native-toasts/commit/cf19276fd63c4614c5b213bf4376591a5ab5ad04))
-* consistent stacking gaps via stackGap offsets ([f84144e](https://github.com/gunnartorfis/sonner-native-toasts/commit/f84144e3dcd927d0d4999fb7dea25138624b857d))
-* deduplicate deps, align versions across workspaces ([68651d0](https://github.com/gunnartorfis/sonner-native-toasts/commit/68651d0c003ae17aa7cf71e9bd939bc6078c1b2c))
-* **deploy:** add netlify.toml to use pnpm for docs build ([9bc7da8](https://github.com/gunnartorfis/sonner-native-toasts/commit/9bc7da8f8d94aeb628576ed6718cc5521fcb8efe))
-* disable enableStacking by default ([76095b7](https://github.com/gunnartorfis/sonner-native-toasts/commit/76095b7d6c97af8bcedf1eb4984d91eec848c737))
-* dismiss toast explicitly on close button tap when stacked and expanded ([ad00758](https://github.com/gunnartorfis/sonner-native-toasts/commit/ad00758b1288fbd36ea645b4deb93e2dfe00dba5))
-* **example:** add elevation to Toaster on Android so it renders above Compose Host ([688a1e7](https://github.com/gunnartorfis/sonner-native-toasts/commit/688a1e7d718e0f2a804b2e2d4964a9aa10d2b39c))
-* **example:** address PR review feedback ([db46255](https://github.com/gunnartorfis/sonner-native-toasts/commit/db4625517ad8befaeba732b140bf1358e3324c89))
-* height-aware stacking position for different-height toasts ([5bda48e](https://github.com/gunnartorfis/sonner-native-toasts/commit/5bda48e5e8c7a80a7a31199ff2ea8a3b1cbafcf0))
-* id=0 falsy guard + stale height on promise toast transition ([bf213ee](https://github.com/gunnartorfis/sonner-native-toasts/commit/bf213ee421320cdffffc207ba1ea37269e61fad9))
-* incremental Map index + jsx dep in useLayoutEffect ([c8cb047](https://github.com/gunnartorfis/sonner-native-toasts/commit/c8cb04765d7f009bbfd4a56bfd35d8f52b12c90e))
-* move absolute positioning outside ToastSwipeHandler for Android gesture hit testing ([e5dda54](https://github.com/gunnartorfis/sonner-native-toasts/commit/e5dda54c3b700a21fbeff680f797aa56ae06c9af))
-* remove double onAutoClose invocation + areActionsEqual false positive ([79c23a1](https://github.com/gunnartorfis/sonner-native-toasts/commit/79c23a1bd7ad2e5c1a664a405aa42c7d0c1c989c))
-* remove double-reversal in orderedToastIds for expanded mode ([80debd9](https://github.com/gunnartorfis/sonner-native-toasts/commit/80debd933f701c138c680724c1e4563c443656f9))
-* remove redundant useSyncExternalStore in ToasterUI ([9c62407](https://github.com/gunnartorfis/sonner-native-toasts/commit/9c62407a753b9b850f20171d70b49b151470aa62))
-* remove unused eslint-disable directive ([d537f26](https://github.com/gunnartorfis/sonner-native-toasts/commit/d537f263762c5544fd96a1e3d8999a4d0eef2d1d))
-* resolve all TypeScript errors in src and example ([92bc1e0](https://github.com/gunnartorfis/sonner-native-toasts/commit/92bc1e01c7f97fb082889187a6efd6ee652fff46))
-* restore type exports and toast prop spread order ([0cb2007](https://github.com/gunnartorfis/sonner-native-toasts/commit/0cb20070d1d27612b0607965777925a9769aedef))
-* revert example app to default top-center position ([a71e1e8](https://github.com/gunnartorfis/sonner-native-toasts/commit/a71e1e8dec7834dc617342cfd02d2555c2c2e31e))
-* skips animation when Reduce Motion is turned on ([b69234b](https://github.com/gunnartorfis/sonner-native-toasts/commit/b69234b9995b67e1ed8c9839dc5b8a165f3291be))
-* stabilize AppState callbacks, sync store config, restore styles merge, remove dead prop ([3261412](https://github.com/gunnartorfis/sonner-native-toasts/commit/3261412fddfeaac27a364e4e393d733d3b387612))
-* stacking toast layout issues with zIndex and visual narrowing ([815ce7e](https://github.com/gunnartorfis/sonner-native-toasts/commit/815ce7e4a452aafef6860e0333ce5ac8d748ff63))
-* thread promise styles through to success/error toast states ([e3e3903](https://github.com/gunnartorfis/sonner-native-toasts/commit/e3e39031f1dd11d9cbe72162f39d1e87459e74b7))
-* timer resume broken for numeric IDs + hasDescription check ([cab90b8](https://github.com/gunnartorfis/sonner-native-toasts/commit/cab90b8186860c08558221f6164c673d81ccad84))
-* toast positioning and safe area handling ([35e4684](https://github.com/gunnartorfis/sonner-native-toasts/commit/35e4684036d3bab097d2285e4c3c6e20ac5a02fc))
-* typo possiblePossition → possiblePosition ([d917365](https://github.com/gunnartorfis/sonner-native-toasts/commit/d917365227897f2e9b491030af1aa2ae3c7be357))
-* use gap from context for stackGap, add gap setting to example ([4f407e6](https://github.com/gunnartorfis/sonner-native-toasts/commit/4f407e62098941ce40d012cecf0c6c2bce51d4d1))
-* use sync getBoundingClientRect for toast measurement (New Arch) ([cc0423a](https://github.com/gunnartorfis/sonner-native-toasts/commit/cc0423a19c47294a4a247683260d5061e4437bd1))
-* wiggle guard falsy check for id=0 ([9f3fd96](https://github.com/gunnartorfis/sonner-native-toasts/commit/9f3fd96581c782cacdbf478bf8a73bc3509f427c))
-
-
-### Features
-
-* **example:** add cross-platform tabs layout and settings screen ([e9ae984](https://github.com/gunnartorfis/sonner-native-toasts/commit/e9ae9843af9a4484f864fc2c7eff65f77ccc4b35))
-* **example:** add inline toaster config and improve demo UX ([0ce9bff](https://github.com/gunnartorfis/sonner-native-toasts/commit/0ce9bffc6a4e76ae825e199b737f618fbbb3fe14))
-* stacking toasts ([65b5b58](https://github.com/gunnartorfis/sonner-native-toasts/commit/65b5b5851e7746f603d466150a3dd0f008a4e952))
-
-
-### Performance Improvements
-
-* address audit findings — split context, memoize styles, O(1) lookups ([f27fd1b](https://github.com/gunnartorfis/sonner-native-toasts/commit/f27fd1b15c885dba05c619b3e894590d903fd300))
-* fix critical re-render cascade and remove expensive per-toast work ([9417033](https://github.com/gunnartorfis/sonner-native-toasts/commit/9417033c775c413a25a1095ee3d1d4bb04869fd8))
-
-
-### Reverts
-
-* drop netlify.toml — config moved to dashboard ([ec4f9db](https://github.com/gunnartorfis/sonner-native-toasts/commit/ec4f9dbdfcd3536ccdecc3d6294f78639ce29b80))
-
-## Unreleased
+A big release. Stacking toasts, a New Architecture–only rewrite of measurement, an external state store, and a full migration to pnpm.
 
 ### ⚠ BREAKING CHANGES
 
-* **New Architecture required.** Toast height measurement uses synchronous `useLayoutEffect` + `getBoundingClientRect()` for flicker-free stacking. Old architecture is no longer supported.
+- **React Native New Architecture is required.** Toast height measurement now uses synchronous `useLayoutEffect` + `getBoundingClientRect()`. The legacy `onLayout` fallback was removed — old architecture builds are no longer supported.
 
 ### Features
 
-* stacking toasts with scale/translate animations
-* tap to expand stacked toasts, outside press to collapse
-* `enableStacking` prop on `<Toaster>` (default: `false`)
+- **Stacking toasts.** New iOS-style stack: incoming toasts pile on top of each other with scale/translate animations instead of pushing siblings out. Tap the stack to expand into a list, tap outside to collapse. Heights are measured per-toast so stacks of different-sized toasts line up correctly.
+  - `enableStacking` prop on `<Toaster>` (default: `false`)
+  - `gap` prop controls spacing between toasts when expanded
+  - Works at all positions; bottom and center stack downward-mirrored
+- **Reduce Motion support.** When the OS Reduce Motion setting is on, entrance/exit animations are skipped.
+- **Promise toasts inherit styles.** `success` / `error` style overrides on a promise toast now flow through to the resolved/rejected state.
+
+### State management rewrite
+
+The toast store moved out of React state into an external observable store. `<Toaster>` and the `toast()` API now subscribe through a stable handler instead of re-rendering the whole tree on every change. Net effect: fewer wasted renders, simpler internals, and `toast()` works identically whether or not a `<Toaster>` is mounted yet.
+
+### Performance
+
+- Split the toast context so stable config and dynamic state re-render independently.
+- Memoized per-toast styles; replaced O(n) lookups with O(1) Map indexes.
+- Killed a re-render cascade where every toast re-rendered on any height change.
+- Removed redundant `useSyncExternalStore` wrapping in `ToasterUI`.
+
+### Bug fixes
+
+- Center position now anchors at the vertical midline and mirrors bottom stacking.
+- Bottom-center safe-area handling fixed.
+- `onAutoClose` no longer fires twice; `areActionsEqual` no longer reports false positives.
+- Numeric toast IDs (including `id=0`) work everywhere — timer resume, wiggle guard, stale-height cleanup.
+- Promise toast height is reset on state transition so the resolved toast doesn't inherit the loading toast's size.
+- Stale `toastHeights` entries are cleared when toasts are shifted out.
+- Android: absolute positioning moved outside `ToastSwipeHandler` so swipe gestures hit-test correctly.
+- Close button on stacked-and-expanded toasts now dismisses explicitly.
+- Typo: `possiblePossition` → `possiblePosition`.
+- TypeScript: all errors in `src` and the example app resolved; type exports and toast prop spread order restored.
+
+### Tooling & infra
+
+- **Migrated from yarn to pnpm.** Workspaces, CI cache, and Netlify docs build all use pnpm now.
+- Upgraded to ESLint 10 (flat config); dropped unused lint deps.
+- Added unit tests and a CI workflow (Node 22, shared setup action).
+- Aligned and deduplicated dependency versions across workspaces.
+- Example app rewritten with Expo Router, native UI, and a settings screen for live Toaster config.
+
+
 
 # [0.24.0](https://github.com/gunnartorfis/react-native-reanimated-toasts/compare/v0.23.1...v0.24.0) (2026-04-01)
 
