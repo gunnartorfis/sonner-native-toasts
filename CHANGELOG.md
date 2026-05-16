@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.1](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.25.0...v0.25.1) (2026-05-16)
+
+
+### Bug Fixes
+
+* **android:** elevate positioner above react-native-screens ([#319](https://github.com/gunnartorfis/sonner-native-toasts/issues/319)) ([9a15f18](https://github.com/gunnartorfis/sonner-native-toasts/commit/9a15f18fdd7529ffa0218356cb9fdd95de46aaf7)), closes [#316](https://github.com/gunnartorfis/sonner-native-toasts/issues/316)
+* widen react-native-worklets peer range to ^0.8.0 ([#320](https://github.com/gunnartorfis/sonner-native-toasts/issues/320)) ([e588a1d](https://github.com/gunnartorfis/sonner-native-toasts/commit/e588a1dff2524c3f2be7301653103cb0c7c64e69)), closes [#315](https://github.com/gunnartorfis/sonner-native-toasts/issues/315)
+
 # [0.25.0](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.24.0...v0.25.0) (2026-04-29)
 
 A big release. Stacking toasts, a New Architecture–only rewrite of measurement, an external state store, and a full migration to pnpm.
