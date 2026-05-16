@@ -62,10 +62,13 @@ export const Positioner: React.FC<
     <>
       {/* Outside pressable area - positioned outside the toast stack */}
       {shouldAllowCollapse && (
-        <Pressable style={outsidePressableStyle} onPress={handleOutsidePress} />
+        <Pressable
+          style={[outsidePressableStyle, androidElevationStyle]}
+          onPress={handleOutsidePress}
+        />
       )}
       <View
-        style={[containerStyle, insetValues, style]}
+        style={[containerStyle, androidElevationStyle, insetValues, style]}
         pointerEvents={
           Platform.OS === 'android' && !hasChildren ? 'none' : 'box-none'
         }
@@ -76,3 +79,8 @@ export const Positioner: React.FC<
     </>
   );
 };
+
+// Without elevation, the positioner can render behind sibling react-native-screens
+// surfaces (native-stack, bottom-tabs) on Android, hiding toasts entirely.
+const androidElevationStyle =
+  Platform.OS === 'android' ? { elevation: 9999 } : null;
