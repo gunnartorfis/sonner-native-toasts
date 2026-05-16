@@ -62,7 +62,10 @@ export const Positioner: React.FC<
     <>
       {/* Outside pressable area - positioned outside the toast stack */}
       {shouldAllowCollapse && (
-        <Pressable style={outsidePressableStyle} onPress={handleOutsidePress} />
+        <Pressable
+          style={[outsidePressableStyle, androidElevationStyle]}
+          onPress={handleOutsidePress}
+        />
       )}
       <View
         style={[containerStyle, androidElevationStyle, insetValues, style]}
