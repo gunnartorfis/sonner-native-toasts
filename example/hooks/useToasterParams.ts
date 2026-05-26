@@ -43,7 +43,7 @@ function parseAnimationKey(value: string | undefined): ToasterAnimationKey {
   if (value === 'default' || value === 'fade' || value === 'slide') {
     return value;
   }
-  return 'fade';
+  return 'default';
 }
 
 export function useToasterParams() {
