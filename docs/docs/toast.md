@@ -147,6 +147,25 @@ toast.success('Updated!', {
 });
 ```
 
+### Custom enter / exit animations
+
+Override the animation for a single toast via the `animation` option:
+
+```tsx
+import { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+
+toast.success('Saved', {
+  animation: {
+    enter: SlideInDown.duration(400),
+    exit: SlideOutDown.duration(300),
+  },
+});
+```
+
+Per-toast `animation` values override any `animation` configured on the `<Toaster />`, per-property. Pass the string `'default'` for either side to revert to the library default just for this toast.
+
+See [Toaster › Enter / Exit animations](./Toaster#enter--exit-animations) for the full type and behavior reference (reduced motion handling, stack overflow exception, etc.).
+
 ### Callbacks
 
 There are two callbacks, `onAutoClose` and `onDismiss`, that can be used to execute code when the toast is auto-closed (after the duration timeout) or manually dismissed, respectively.
@@ -224,6 +243,7 @@ Toasts can also be automatically wiggled by passing the `autoWiggleOnUpdate` pro
 | cancelButtonTextStyles |                                   Styles for the cancel button text                                    |         `{}` |
 | richColors             |                              Makes error and success state more colorful                               |      `false` |
 | backgroundComponent    |               Custom component rendered as toast background. Overrides Toaster default.                |          `-` |
+| animation              |                  Custom Reanimated entering/exiting animations for this specific toast.               |          `-` |
 
 ```
 

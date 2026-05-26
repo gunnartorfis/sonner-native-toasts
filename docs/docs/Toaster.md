@@ -40,6 +40,39 @@ The `position` prop determines where the toasts are displayed on the screen.
 <Toaster position="bottom-center" />
 ```
 
+### Enter / Exit animations
+
+Customize how toasts enter and leave by passing the `animation` prop. Each side (`enter` / `exit`) accepts any value that `react-native-reanimated`'s `entering` / `exiting` props accept: a preset (`FadeIn`, `SlideInUp`, …), a `Keyframe`, or a custom worklet function returning `{ initialValues, animations }`.
+
+```tsx
+import { Toaster } from 'sonner-native';
+import { FadeIn, FadeOut } from 'react-native-reanimated';
+
+<Toaster
+  animation={{
+    enter: FadeIn.duration(300),
+    exit: FadeOut.duration(200),
+  }}
+/>;
+```
+
+Per-property fallback: if you only set `enter`, the library default `exit` is used (and vice versa).
+
+Per-toast override: an individual `toast(...)` call may set its own `animation` to override the Toaster-wide values. Per-property merge — a per-toast `enter` does not erase a Toaster-wide `exit`.
+
+Explicit reset: pass the string `'default'` to force the library default for a particular side. Useful when a Toaster-wide custom animation is set but a single toast should keep the default behavior.
+
+```tsx
+toast.success('Reset to default exit', {
+  animation: { exit: 'default' },
+});
+```
+
+Notes:
+
+- The reduced-motion system setting still disables all animations, including custom ones.
+- When a toast is removed because the stack overflows `visibleToasts`, the library uses its built-in fade exit regardless of any custom `exit` — a custom slide on a buried toast would look wrong.
+
 ### Default styles for toasts
 
 You can provide default styles for all toasts by passing the `style` prop to the Toaster component. All customization passed to the toast() will be concatenated with these default styles.
@@ -178,4 +211,5 @@ toast.success('Saved!', {
 | ToasterOverlayWrapper            |                                Custom component to wrap the Toaster.                               |        `div` |
 | ToastWrapper                     |                                 Custom component to wrap the Toast.                                |        `div` |
 | autoWiggleOnUpdate               |             Adds a wiggle animation on toast update. `never`, `toast-change`, `always`             |      `never` |
+| animation                        |                  Custom Reanimated entering/exiting animations applied to all toasts.              |          `-` |
 | richColors                       |                             Makes error and success state more colorful                            |      `false` |
