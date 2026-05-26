@@ -32,6 +32,7 @@ const ToastDemo: React.FC = () => {
     richColors,
     invert,
     gap,
+    animationKey,
     setParam,
   } = useToasterParams();
 
@@ -122,6 +123,16 @@ const ToastDemo: React.FC = () => {
                 {n}
               </SwiftUIText>
             ))}
+          </Picker>
+          <Picker
+            label="Animation"
+            selection={animationKey}
+            onSelectionChange={(v) => setParam('animation', v as string)}
+            modifiers={[pickerStyle('menu')]}
+          >
+            <SwiftUIText modifiers={[tag('default')]}>Default</SwiftUIText>
+            <SwiftUIText modifiers={[tag('fade')]}>Fade</SwiftUIText>
+            <SwiftUIText modifiers={[tag('slide')]}>Slide</SwiftUIText>
           </Picker>
           <Toggle
             label="Stacking"
@@ -693,9 +704,9 @@ const ToastDemo: React.FC = () => {
           <SwiftUIButton
             modifiers={[buttonStyle('bordered')]}
             onPress={() =>
-              toast('Toaster-wide fade (uses Toaster animation prop)')
+              toast('Toaster-wide animation (uses Toaster animation prop)')
             }
-            label="Toaster-wide fade"
+            label="Toaster-wide animation"
           />
           <SwiftUIButton
             modifiers={[buttonStyle('bordered')]}
