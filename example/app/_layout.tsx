@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Pressable, Text, useColorScheme } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { useToasterParams } from '../hooks/useToasterParams';
@@ -72,6 +73,10 @@ const RootLayout: React.FC = () => {
           richColors={richColors}
           invert={invert}
           gap={gap}
+          animation={{
+            enter: FadeIn.duration(300),
+            exit: FadeOut.duration(200),
+          }}
           icons={{
             error: <Text>💥</Text>,
             loading: <Text>🔄</Text>,

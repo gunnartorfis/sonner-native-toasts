@@ -15,6 +15,7 @@ import {
 import { paddingAll, fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
 import * as React from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { FadeIn, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { toast } from 'sonner-native';
 import { useToasterParams } from '../hooks/useToasterParams';
 
@@ -831,6 +832,56 @@ const ToastDemo: React.FC = () => {
               modifiers={[fillMaxWidth()]}
             >
               <ComposeText>Custom JSX</ComposeText>
+            </OutlinedButton>
+          </Column>
+        </Card>
+
+        <SectionHeader title="Animations" />
+        <Card modifiers={[fillMaxWidth()]}>
+          <Column modifiers={[paddingAll(12)]}>
+            <OutlinedButton
+              onClick={() =>
+                toast('Toaster-wide fade (uses Toaster animation prop)')
+              }
+              modifiers={[fillMaxWidth()]}
+            >
+              <ComposeText>Toaster-wide fade</ComposeText>
+            </OutlinedButton>
+            <OutlinedButton
+              onClick={() =>
+                toast.success('Per-toast slide override', {
+                  animation: {
+                    enter: SlideInDown.duration(400),
+                    exit: SlideOutDown.duration(300),
+                  },
+                })
+              }
+              modifiers={[fillMaxWidth()]}
+            >
+              <ComposeText>Per-toast slide override</ComposeText>
+            </OutlinedButton>
+            <OutlinedButton
+              onClick={() =>
+                toast.info('Per-toast explicit reset to default', {
+                  animation: { enter: 'default', exit: 'default' },
+                })
+              }
+              modifiers={[fillMaxWidth()]}
+            >
+              <ComposeText>Per-toast reset to default</ComposeText>
+            </OutlinedButton>
+            <OutlinedButton
+              onClick={() =>
+                toast.warning(
+                  'Custom enter only — exit falls back to default',
+                  {
+                    animation: { enter: FadeIn.duration(600) },
+                  }
+                )
+              }
+              modifiers={[fillMaxWidth()]}
+            >
+              <ComposeText>Custom enter, default exit</ComposeText>
             </OutlinedButton>
           </Column>
         </Card>

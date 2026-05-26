@@ -15,6 +15,7 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import * as React from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { FadeIn, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { toast } from 'sonner-native';
 import { useToasterParams } from '../hooks/useToasterParams';
 
@@ -685,6 +686,46 @@ const ToastDemo: React.FC = () => {
               );
             }}
             label="Custom JSX"
+          />
+        </Section>
+
+        <Section title="Animations">
+          <SwiftUIButton
+            modifiers={[buttonStyle('bordered')]}
+            onPress={() =>
+              toast('Toaster-wide fade (uses Toaster animation prop)')
+            }
+            label="Toaster-wide fade"
+          />
+          <SwiftUIButton
+            modifiers={[buttonStyle('bordered')]}
+            onPress={() =>
+              toast.success('Per-toast slide override', {
+                animation: {
+                  enter: SlideInDown.duration(400),
+                  exit: SlideOutDown.duration(300),
+                },
+              })
+            }
+            label="Per-toast slide override"
+          />
+          <SwiftUIButton
+            modifiers={[buttonStyle('bordered')]}
+            onPress={() =>
+              toast.info('Per-toast explicit reset to default', {
+                animation: { enter: 'default', exit: 'default' },
+              })
+            }
+            label="Per-toast reset to default"
+          />
+          <SwiftUIButton
+            modifiers={[buttonStyle('bordered')]}
+            onPress={() =>
+              toast.warning('Custom enter only — exit falls back to default', {
+                animation: { enter: FadeIn.duration(600) },
+              })
+            }
+            label="Custom enter, default exit"
           />
         </Section>
       </Form>
