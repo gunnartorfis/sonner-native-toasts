@@ -1,19 +1,35 @@
 import { useReducedMotion, withTiming } from 'react-native-reanimated';
+import type { EntryExitAnimationFunction } from 'react-native-reanimated';
 import { getEnteringTranslateY, getExitingTranslateY } from './animation-utils';
 import { toastDefaultValues } from './constants';
 import { useToastContext } from './context';
 import { easeInOutCubic, easeOutQuartFn } from './easings';
-import type { ToastPosition } from './types';
+import type { ToastAnimation, ToastEntryExitAnimation, ToastPosition } from './types';
 
 export const ENTERING_ANIMATION_DURATION = 300;
 export const STACKING_ANIMATION_DURATION = 600;
 
+type ResolvedAnimation = Exclude<ToastEntryExitAnimation, 'default'>;
+
+export const resolveAnimationField = (
+  toastValue: ToastEntryExitAnimation | undefined,
+  toasterValue: ToastEntryExitAnimation | undefined,
+  defaultValue: EntryExitAnimationFunction
+): ResolvedAnimation => {
+  const resolved = toastValue !== undefined ? toastValue : toasterValue;
+  if (resolved === undefined || resolved === 'default') {
+    return defaultValue;
+  }
+  return resolved;
+};
+
 export const useToastLayoutAnimations = (
   positionProp: ToastPosition | undefined,
+  animationProp: ToastAnimation | undefined,
   isHiddenByLimit?: boolean,
   numberOfToasts?: number
 ) => {
-  const { position: positionCtx, gap } = useToastContext();
+  const { position: positionCtx, gap, animation: animationCtx } = useToastContext();
   const position = positionProp || positionCtx;
   const stackGap = gap ?? toastDefaultValues.stackGap;
   const reducedMotion = useReducedMotion();
@@ -22,21 +38,38 @@ export const useToastLayoutAnimations = (
     return { entering: undefined, exiting: undefined };
   }
 
-  return {
-    entering: () => {
-      'worklet';
-      return getToastEntering({ position });
-    },
-    exiting: () => {
-      'worklet';
-      return getToastExiting({
-        position,
-        isHiddenByLimit,
-        numberOfToasts,
-        stackGap,
-      });
-    },
+  const defaultEntering: EntryExitAnimationFunction = () => {
+    'worklet';
+    return getToastEntering({ position });
   };
+
+  const defaultExiting: EntryExitAnimationFunction = () => {
+    'worklet';
+    return getToastExiting({
+      position,
+      isHiddenByLimit,
+      numberOfToasts,
+      stackGap,
+    });
+  };
+
+  const entering = resolveAnimationField(
+    animationProp?.enter,
+    animationCtx?.enter,
+    defaultEntering
+  );
+
+  // Overflow-cull (isHiddenByLimit) always uses the library fade exit.
+  // User-supplied custom exits would look wrong on a buried toast.
+  const exiting = isHiddenByLimit
+    ? defaultExiting
+    : resolveAnimationField(
+        animationProp?.exit,
+        animationCtx?.exit,
+        defaultExiting
+      );
+
+  return { entering, exiting };
 };
 
 type GetToastAnimationParams = {

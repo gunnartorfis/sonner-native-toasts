@@ -18,6 +18,7 @@ const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
 const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
 const EMPTY_ICONS: NonNullable<ToasterProps['icons']> = {};
+const EMPTY_ANIMATION: NonNullable<ToasterProps['animation']> = {};
 
 function orderToastsFromPosition(
   currentToasts: ToastProps[],
@@ -92,6 +93,7 @@ const ToasterUI: React.FC<
   autoWiggleOnUpdate,
   richColors,
   enableStacking = toastDefaultValues.enableStacking,
+  animation,
   ToastWrapper,
   positionerStyle,
   ...props
@@ -127,6 +129,7 @@ const ToasterUI: React.FC<
       richColors: richColors ?? toastDefaultValues.richColors,
       enableStacking: enableStacking ?? toastDefaultValues.enableStacking,
       visibleToasts: visibleToasts ?? toastDefaultValues.visibleToasts,
+      animation: animation ?? EMPTY_ANIMATION,
     }),
     [
       duration,
@@ -144,6 +147,7 @@ const ToasterUI: React.FC<
       richColors,
       enableStacking,
       visibleToasts,
+      animation,
     ]
   );
 
