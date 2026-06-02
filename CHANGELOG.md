@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.3](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.25.2...v0.25.3) (2026-06-02)
+
+
+### Features
+
+* customize enter/exit animations ([#321](https://github.com/gunnartorfis/sonner-native-toasts/issues/321)) ([d8e5a34](https://github.com/gunnartorfis/sonner-native-toasts/commit/d8e5a34eb1b00f00065a9c3b8f91adad1d2ccd06)), closes [#318](https://github.com/gunnartorfis/sonner-native-toasts/issues/318)
+
 ## [0.25.2](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.25.1...v0.25.2) (2026-06-02)
 
 ## [0.25.1](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.25.0...v0.25.1) (2026-05-16)
