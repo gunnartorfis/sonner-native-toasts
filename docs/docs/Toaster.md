@@ -202,6 +202,8 @@ toast.success('Saved!', {
 | offset                           |                                   Offset from the top or bottom                                    |          `0` |
 | closeButton                      |                                 Adds a close button to all toasts                                  |      `false` |
 | invert                           |                             Dark toasts in light mode and vice versa.                              |      `false` |
+| allowFontScaling                 |              Whether toast text scales with the device's system font size setting.                 |       `true` |
+| maxFontSizeMultiplier            |             Caps how much toast text scales with the device's system font size.                    |          `-` |
 | toastOptions                     | These will act as default options for all toasts. See [toast()](/toast) for all available options. |         `{}` |
 | toastOptions.backgroundComponent |           Custom component rendered as toast background. Must use absolute positioning.            |          `-` |
 | gap                              |                                  Gap between toasts when expanded                                  |         `16` |
