@@ -33,6 +33,8 @@ const ToastDemo: React.FC = () => {
     invert,
     gap,
     animationKey,
+    allowFontScaling,
+    maxFontSizeMultiplier,
     setParam,
   } = useToasterParams();
 
@@ -134,6 +136,29 @@ const ToastDemo: React.FC = () => {
             <SwiftUIText modifiers={[tag('fade')]}>Fade</SwiftUIText>
             <SwiftUIText modifiers={[tag('slide')]}>Slide</SwiftUIText>
           </Picker>
+          <Picker
+            label="Max Font Scale"
+            selection={String(maxFontSizeMultiplier ?? 'default')}
+            onSelectionChange={(v) =>
+              setParam(
+                'maxFontSizeMultiplier',
+                v === 'default' ? '' : (v as string)
+              )
+            }
+            modifiers={[pickerStyle('menu')]}
+          >
+            <SwiftUIText modifiers={[tag('default')]}>Default</SwiftUIText>
+            {['1.2', '1.5', '2', '3'].map((n) => (
+              <SwiftUIText key={n} modifiers={[tag(n)]}>
+                {n}
+              </SwiftUIText>
+            ))}
+          </Picker>
+          <Toggle
+            label="Allow Font Scaling"
+            isOn={allowFontScaling}
+            onIsOnChange={(v) => setParam('allowFontScaling', String(v))}
+          />
           <Toggle
             label="Stacking"
             isOn={stackingEnabled}
@@ -281,6 +306,17 @@ const ToastDemo: React.FC = () => {
             modifiers={[buttonStyle('bordered')]}
             onPress={() => toast('Inverted toast', { invert: true })}
             label="Invert toast"
+          />
+          <SwiftUIButton
+            modifiers={[buttonStyle('bordered')]}
+            onPress={() =>
+              toast('Fixed text size', {
+                description:
+                  'This toast ignores the system font size so the layout stays intact even at the largest accessibility setting.',
+                allowFontScaling: false,
+              })
+            }
+            label="Per-toast no font scaling"
           />
         </Section>
 

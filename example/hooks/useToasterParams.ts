@@ -60,6 +60,8 @@ export function useToasterParams() {
     invert?: string;
     gap?: string;
     animation?: string;
+    allowFontScaling?: string;
+    maxFontSizeMultiplier?: string;
   }>();
 
   const position = (params.position as ToastPosition) || 'top-center';
@@ -75,6 +77,10 @@ export function useToasterParams() {
   const gap = params.gap ? parseInt(params.gap, 10) : undefined;
   const animationKey = parseAnimationKey(params.animation);
   const animation = TOASTER_ANIMATION_PRESETS[animationKey];
+  const allowFontScaling = params.allowFontScaling !== 'false';
+  const maxFontSizeMultiplier = params.maxFontSizeMultiplier
+    ? parseFloat(params.maxFontSizeMultiplier)
+    : undefined;
 
   const setParam = (key: string, value: string) => {
     router.setParams({ [key]: value });
@@ -93,6 +99,8 @@ export function useToasterParams() {
     gap,
     animationKey,
     animation,
+    allowFontScaling,
+    maxFontSizeMultiplier,
     setParam,
   };
 }

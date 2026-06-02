@@ -118,6 +118,8 @@ const ToastDemo: React.FC = () => {
     invert,
     gap,
     animationKey,
+    allowFontScaling,
+    maxFontSizeMultiplier,
     setParam,
   } = useToasterParams();
 
@@ -215,6 +217,27 @@ const ToastDemo: React.FC = () => {
                 { label: 'Slide', value: 'slide' },
               ]}
               onSelect={(v) => setParam('animation', v)}
+            />
+            <HorizontalDivider />
+            <PickerRow
+              label="Max Font Scale"
+              value={String(maxFontSizeMultiplier ?? 'default')}
+              options={[
+                { label: 'Default', value: 'default' },
+                ...['1.2', '1.5', '2', '3'].map((n) => ({
+                  label: n,
+                  value: n,
+                })),
+              ]}
+              onSelect={(v) =>
+                setParam('maxFontSizeMultiplier', v === 'default' ? '' : v)
+              }
+            />
+            <HorizontalDivider />
+            <SwitchRow
+              label="Allow Font Scaling"
+              value={allowFontScaling}
+              onChange={(v) => setParam('allowFontScaling', String(v))}
             />
             <HorizontalDivider />
             <SwitchRow
@@ -388,6 +411,18 @@ const ToastDemo: React.FC = () => {
               modifiers={[fillMaxWidth()]}
             >
               <ComposeText>Invert toast</ComposeText>
+            </OutlinedButton>
+            <OutlinedButton
+              onClick={() =>
+                toast('Fixed text size', {
+                  description:
+                    'This toast ignores the system font size so the layout stays intact even at the largest accessibility setting.',
+                  allowFontScaling: false,
+                })
+              }
+              modifiers={[fillMaxWidth()]}
+            >
+              <ComposeText>Per-toast no font scaling</ComposeText>
             </OutlinedButton>
           </Column>
         </Card>
