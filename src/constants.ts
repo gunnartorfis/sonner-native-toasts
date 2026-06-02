@@ -28,6 +28,7 @@ export const toastDefaultValues: {
   richColors: boolean;
   enableStacking: boolean;
   stackGap: number;
+  allowFontScaling: boolean;
 } = {
   duration: 4000,
   position: 'top-center',
@@ -46,4 +47,5 @@ export const toastDefaultValues: {
   richColors: false,
   enableStacking: false,
   stackGap: 8,
+  allowFontScaling: true,
 };

@@ -73,6 +73,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       invert: invertProps,
       richColors: richColorsProps,
       onPress,
+      allowFontScaling: allowFontScalingProps,
+      maxFontSizeMultiplier: maxFontSizeMultiplierProps,
       backgroundComponent: backgroundComponentProps,
       numberOfToasts,
       index,
@@ -87,6 +89,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       pauseWhenPageIsHidden,
       invert: invertCtx,
       richColors: richColorsCtx,
+      allowFontScaling: allowFontScalingCtx,
+      maxFontSizeMultiplier: maxFontSizeMultiplierCtx,
       enableStacking,
       gap,
       position: positionCtx,
@@ -122,6 +126,9 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
     } = useDynamicToastContext();
     const invert = invertProps ?? invertCtx;
     const richColors = richColorsProps ?? richColorsCtx;
+    const allowFontScaling = allowFontScalingProps ?? allowFontScalingCtx;
+    const maxFontSizeMultiplier =
+      maxFontSizeMultiplierProps ?? maxFontSizeMultiplierCtx;
     const unstyled = unstyledProps ?? unstyledCtx;
     const duration = durationProps ?? durationCtx;
     const closeButton = closeButtonProps ?? closeButtonCtx;
@@ -482,12 +489,16 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
                 ]}
               >
                 <Text
+                  allowFontScaling={allowFontScaling}
+                  maxFontSizeMultiplier={maxFontSizeMultiplier}
                   style={[defaultStyles.title, titleStyleCtx, mergedStyles?.title]}
                 >
                   {title}
                 </Text>
                 {description ? (
                   <Text
+                    allowFontScaling={allowFontScaling}
+                    maxFontSizeMultiplier={maxFontSizeMultiplier}
                     style={[
                       defaultStyles.description,
                       descriptionStyleCtx,
@@ -517,6 +528,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
                     >
                       <Text
                         numberOfLines={1}
+                        allowFontScaling={allowFontScaling}
+                        maxFontSizeMultiplier={maxFontSizeMultiplier}
                         style={[
                           defaultStyles.actionButtonText,
                           actionButtonTextStyleCtx,
@@ -543,6 +556,8 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
                     >
                       <Text
                         numberOfLines={1}
+                        allowFontScaling={allowFontScaling}
+                        maxFontSizeMultiplier={maxFontSizeMultiplier}
                         style={[
                           defaultStyles.cancelButtonText,
                           cancelButtonTextStyleCtx,

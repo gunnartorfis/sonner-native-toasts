@@ -93,6 +93,8 @@ export type ToastProps = StyleProps & {
   cancelButtonStyle?: ViewStyle;
   cancelButtonTextStyle?: TextStyle;
   onPress?: () => void;
+  allowFontScaling?: boolean;
+  maxFontSizeMultiplier?: number;
 };
 
 export type ToastRef = {
@@ -138,6 +140,8 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
   // dir?: 'ltr' | 'rtl'; (ltr)
   // hotkey?: string; // hotkeys not supported on mobile
   invert?: boolean;
+  allowFontScaling?: boolean;
+  maxFontSizeMultiplier?: number;
   toastOptions?: {
     actionButtonStyle?: ViewStyle;
     actionButtonTextStyle?: TextStyle;
@@ -207,10 +211,12 @@ export type StableToastContextType = Required<
     | 'unstyled'
     | 'enableStacking'
     | 'visibleToasts'
+    | 'allowFontScaling'
   >
 > & {
   addToast: AddToastContextHandler;
   animation: ToastAnimation;
+  maxFontSizeMultiplier?: number;
 };
 
 export type DynamicToastContextType = {

@@ -21,6 +21,8 @@ const RootLayout: React.FC = () => {
     invert,
     gap,
     animation,
+    allowFontScaling,
+    maxFontSizeMultiplier,
   } = useToasterParams();
 
   return (
@@ -74,6 +76,8 @@ const RootLayout: React.FC = () => {
           invert={invert}
           gap={gap}
           animation={animation}
+          allowFontScaling={allowFontScaling}
+          maxFontSizeMultiplier={maxFontSizeMultiplier}
           icons={{
             error: <Text>💥</Text>,
             loading: <Text>🔄</Text>,

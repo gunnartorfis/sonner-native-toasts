@@ -227,6 +227,8 @@ Toasts can also be automatically wiggled by passing the `autoWiggleOnUpdate` pro
 | description            |                           Toast's description, renders underneath the title.                           |          `-` |
 | closeButton            |                                          Adds a close button.                                          |      `false` |
 | invert                 |                                Dark toast in light mode and vice versa.                                |      `false` |
+| allowFontScaling       |               Whether toast text scales with the device's system font size setting.                    |       `true` |
+| maxFontSizeMultiplier  |               Caps how much toast text scales with the device's system font size.                      |          `-` |
 | important              |                        Control the sensitivity of the toast for screen readers                         |      `false` |
 | duration               |            Time in milliseconds that should elapse before automatically closing the toast.             |       `4000` |
 | position               |                                         Position of the toast.                                         | `top-center` |
