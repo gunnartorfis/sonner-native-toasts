@@ -20,6 +20,7 @@ const RootLayout: React.FC = () => {
     richColors,
     invert,
     gap,
+    animation,
   } = useToasterParams();
 
   return (
@@ -72,6 +73,7 @@ const RootLayout: React.FC = () => {
           richColors={richColors}
           invert={invert}
           gap={gap}
+          animation={animation}
           icons={{
             error: <Text>💥</Text>,
             loading: <Text>🔄</Text>,

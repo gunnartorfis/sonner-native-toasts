@@ -1,5 +1,10 @@
 import type React from 'react';
 import type { TextStyle, ViewProps, ViewStyle } from 'react-native';
+import type {
+  BaseAnimationBuilder,
+  EntryExitAnimationFunction,
+  ReanimatedKeyframe as Keyframe,
+} from 'react-native-reanimated';
 
 export type ToastStyles = {
   toastContainer?: ViewStyle;
@@ -40,6 +45,18 @@ export type ToastSwipeDirection = 'left' | 'up';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
+export type ToastEntryExitAnimation =
+  | EntryExitAnimationFunction
+  | BaseAnimationBuilder
+  | typeof BaseAnimationBuilder
+  | Keyframe
+  | 'default';
+
+export type ToastAnimation = {
+  enter?: ToastEntryExitAnimation;
+  exit?: ToastEntryExitAnimation;
+};
+
 export type AutoWiggle = 'never' | 'toast-change' | 'always';
 
 export type ToastAction = {
@@ -60,6 +77,7 @@ export type ToastProps = StyleProps & {
   important?: boolean;
   duration?: number;
   position?: ToastPosition;
+  animation?: ToastAnimation;
   dismissible?: boolean;
   icon?: React.ReactNode;
   action?: ToastAction | React.ReactNode;
@@ -156,6 +174,7 @@ export type ToasterProps = Omit<StyleProps, 'style'> & {
   swipeToDismissDirection?: ToastSwipeDirection;
   pauseWhenPageIsHidden?: boolean;
   enableStacking?: boolean;
+  animation?: ToastAnimation;
   ToasterOverlayWrapper?: React.ComponentType<{ children: React.ReactNode }>;
   ToastWrapper?: React.ComponentType<
     ViewProps & {
@@ -191,6 +210,7 @@ export type StableToastContextType = Required<
   >
 > & {
   addToast: AddToastContextHandler;
+  animation: ToastAnimation;
 };
 
 export type DynamicToastContextType = {

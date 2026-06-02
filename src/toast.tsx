@@ -67,6 +67,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       parentStyles,
       promiseOptions,
       position,
+      animation,
       unstyled: unstyledProps,
       important,
       invert: invertProps,
@@ -167,6 +168,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
 
     const { entering, exiting } = useToastLayoutAnimations(
       position,
+      animation,
       isHiddenByLimit,
       numberOfToasts
     );
