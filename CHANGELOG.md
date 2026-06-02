@@ -1,5 +1,13 @@
 # Changelog
 
+# [0.26.0](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.25.3...v0.26.0) (2026-06-02)
+
+
+### Features
+
+* add allowFontScaling and maxFontSizeMultiplier props ([d3b612d](https://github.com/gunnartorfis/sonner-native-toasts/commit/d3b612dcf2538702f3532bfe4cb17f8d6fea21a4)), closes [#310](https://github.com/gunnartorfis/sonner-native-toasts/issues/310)
+* **example:** add allowFontScaling and maxFontSizeMultiplier controls ([280e895](https://github.com/gunnartorfis/sonner-native-toasts/commit/280e895a944be34eb2302371f9bac7e08a03bbe6))
+
 ## [0.25.3](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.25.2...v0.25.3) (2026-06-02)
 
 
