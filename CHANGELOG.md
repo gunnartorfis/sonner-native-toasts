@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.26.1](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.0...v0.26.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* fall back to measureInWindow when getBoundingClientRect unavailable ([79b42cc](https://github.com/gunnartorfis/sonner-native-toasts/commit/79b42cc83d0e89c2c5ab7d1850324294ca25647f))
+* guard stale measureInWindow callbacks with effect cleanup ([e2e17d1](https://github.com/gunnartorfis/sonner-native-toasts/commit/e2e17d176cfb2297079885c850284aab306b80a8))
+
 # [0.26.0](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.25.3...v0.26.0) (2026-06-02)
 
 
