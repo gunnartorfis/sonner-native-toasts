@@ -316,11 +316,17 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       if (typeof toastRef.current.getBoundingClientRect === 'function') {
         const { height } = toastRef.current.getBoundingClientRect();
         toastStore.setToastHeight(id, height);
-      } else {
-        toastRef.current.measureInWindow((_x, _y, _w, height) => {
-          toastStore.setToastHeight(id, height);
-        });
+        return;
       }
+      let stale = false;
+      toastRef.current.measureInWindow((_x, _y, _w, height) => {
+        if (!stale) {
+          toastStore.setToastHeight(id, height);
+        }
+      });
+      return () => {
+        stale = true;
+      };
     }, [id, variant, title, description, jsx]);
 
     const defaultStyles = useDefaultStyles({
