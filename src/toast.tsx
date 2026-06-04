@@ -196,7 +196,9 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
     });
 
     const isDragging = React.useRef(false);
-    const toastRef = React.useRef<View & { getBoundingClientRect(): DOMRect }>(null);
+    const toastRef = React.useRef<
+      View & { getBoundingClientRect?: () => DOMRect }
+    >(null);
 
     const wiggleSharedValue = useSharedValue(1);
 
@@ -303,14 +305,28 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
       onForeground,
     });
 
-    // Synchronous layout read via New Architecture's getBoundingClientRect.
-    // Runs during commit so positions resolve in the same frame.
+    // Synchronous layout read via getBoundingClientRect when available
+    // (refs are ReactNativeElement by default from RN 0.83). Older New Arch
+    // versions (e.g. RN 0.81/Expo SDK 54) don't expose it on refs, so fall
+    // back to async measureInWindow.
     React.useLayoutEffect(() => {
       if (!toastRef.current) {
         return;
       }
-      const { height } = toastRef.current.getBoundingClientRect();
-      toastStore.setToastHeight(id, height);
+      if (typeof toastRef.current.getBoundingClientRect === 'function') {
+        const { height } = toastRef.current.getBoundingClientRect();
+        toastStore.setToastHeight(id, height);
+        return;
+      }
+      let stale = false;
+      toastRef.current.measureInWindow((_x, _y, _w, height) => {
+        if (!stale) {
+          toastStore.setToastHeight(id, height);
+        }
+      });
+      return () => {
+        stale = true;
+      };
     }, [id, variant, title, description, jsx]);
 
     const defaultStyles = useDefaultStyles({
