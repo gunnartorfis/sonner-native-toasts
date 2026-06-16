@@ -175,12 +175,14 @@ additive and shouldn't affect them).
 
 ### Step 3: Write `src/__tests__/toaster.test.tsx`
 
-Create the file. Use `react-test-renderer`'s `create` + `act`. Reset the store
+Create the file. Use `react-test-renderer`'s `create` with React's `act` (imported
+from `'react'`, not `'react-test-renderer'`). Reset the store
 singleton between tests exactly as `toast-store.test.ts` does. Outline:
 
 ```tsx
 import * as React from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
+import { act } from 'react'; // React 19: import act from 'react', not 'react-test-renderer'
+import TestRenderer from 'react-test-renderer';
 import { Toaster } from '../toaster';
 import { toast } from '../toast-fns';
 import { toastStore } from '../toast-store';
@@ -200,6 +202,11 @@ const resetStore = () => {
   toastStore['config'] = {};
   toastStore['subscribers'] = new Set();
   toastStore['promiseResolvers'] = new Map();
+  // Clear the timer/cooldown handles too, so a prior test's scheduleHideOverlay /
+  // collapse cooldown doesn't leak a stale handle into the next test.
+  toastStore['hideOverlayTimeout'] = null;
+  toastStore['collapseCooldown'] = false;
+  toastStore['collapseCooldownTimeout'] = null;
 };
 
 // helper: collect all rendered string children in the tree
