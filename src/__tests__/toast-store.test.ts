@@ -557,4 +557,35 @@ describe('ToastStore', () => {
       expect(subscriber2).toHaveBeenCalled();
     });
   });
+
+  describe('toastRefs cleanup', () => {
+    it('single dismiss frees the ref', () => {
+      const id = toastStore.addToast({ title: 'a', variant: 'info' as const });
+
+      expect(toastStore.getSnapshot().toastRefs[id]).toBeDefined();
+
+      toastStore.dismissToast(id);
+
+      expect(toastStore.getSnapshot().toastRefs[id]).toBeUndefined();
+    });
+
+    it('dismiss-all clears every ref', () => {
+      toastStore.addToast({ id: 'x', title: 'x', variant: 'info' as const });
+      toastStore.addToast({ id: 'y', title: 'y', variant: 'info' as const });
+
+      toastStore.dismissToast(undefined);
+
+      expect(Object.keys(toastStore.getSnapshot().toastRefs)).toHaveLength(0);
+    });
+
+    it('overflow trim frees the trimmed toast ref', () => {
+      toastStore.setConfig({ visibleToasts: 1 });
+
+      toastStore.addToast({ id: 'first', title: 'first', variant: 'info' as const });
+      toastStore.addToast({ id: 'second', title: 'second', variant: 'info' as const });
+
+      expect(toastStore.getSnapshot().toastRefs['first']).toBeUndefined();
+      expect(toastStore.getSnapshot().toastRefs['second']).toBeDefined();
+    });
+  });
 });
