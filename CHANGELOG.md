@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.2](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.1...v0.26.2) (2026-06-16)
+
+
+### Bug Fixes
+
+* widen peer dep ranges to floors for worklets and gesture-handler ([e64259c](https://github.com/gunnartorfis/sonner-native-toasts/commit/e64259c347b4093e1bceaec7669990993349e734)), closes [#315](https://github.com/gunnartorfis/sonner-native-toasts/issues/315)
+
 ## [0.26.1](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.0...v0.26.1) (2026-06-04)
 
 
