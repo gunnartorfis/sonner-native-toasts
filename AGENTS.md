@@ -10,7 +10,7 @@ reference for *how the code is built, checked, and structured*.
 @emilkowalski's Sonner. Built on `react-native-reanimated` and
 `react-native-gesture-handler`. The published package ships `src` + the built
 `lib`; everything else (reanimated, gesture-handler, safe-area-context, screens,
-svg) is a peer dependency.
+svg, worklets) is a peer dependency.
 
 ## Repository layout
 
