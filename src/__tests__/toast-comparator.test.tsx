@@ -215,6 +215,30 @@ describe('areToastsEqual', () => {
     expect(areToastsEqual(toast1, toast2)).toBe(true);
   });
 
+  it('should return true when cancel onClick differs but label is the same', () => {
+    const toast1: ToastProps = {
+      ...base,
+      id: 1,
+      title: 'Toast 1',
+      variant: 'success' as const,
+      cancel: { label: 'Dismiss', onClick: () => {} },
+      index: 0,
+      numberOfToasts: 1,
+    };
+
+    const toast2: ToastProps = {
+      ...base,
+      id: 1,
+      title: 'Toast 1',
+      variant: 'success' as const,
+      cancel: { label: 'Dismiss', onClick: () => console.log('different handler') },
+      index: 0,
+      numberOfToasts: 1,
+    };
+
+    expect(areToastsEqual(toast1, toast2)).toBe(true);
+  });
+
   it('should return false when cancel labels are different', () => {
     const toast1: ToastProps = {
       ...base,
