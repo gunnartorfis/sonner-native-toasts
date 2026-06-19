@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import type { ToastProps } from '../types'; // Adjust the import path Adjust the import path
+import type { ToastProps } from '../types';
 import { areToastsEqual } from '../toast-comparator';
 
 // Mock helper function to simulate a click handler
@@ -184,6 +184,54 @@ describe('areToastsEqual', () => {
       variant: 'success',
       action: mockReactNode,
       cancel: mockReactNode,
+      index: 0,
+      numberOfToasts: 1,
+    };
+
+    expect(areToastsEqual(toast1, toast2)).toBe(true);
+  });
+
+  it('should return true when action onClick differs but label is the same', () => {
+    const toast1: ToastProps = {
+      ...base,
+      id: 1,
+      title: 'Toast 1',
+      variant: 'success' as const,
+      action: { label: 'Retry', onClick: () => {} },
+      index: 0,
+      numberOfToasts: 1,
+    };
+
+    const toast2: ToastProps = {
+      ...base,
+      id: 1,
+      title: 'Toast 1',
+      variant: 'success' as const,
+      action: { label: 'Retry', onClick: () => console.log('different handler') },
+      index: 0,
+      numberOfToasts: 1,
+    };
+
+    expect(areToastsEqual(toast1, toast2)).toBe(true);
+  });
+
+  it('should return true when cancel onClick differs but label is the same', () => {
+    const toast1: ToastProps = {
+      ...base,
+      id: 1,
+      title: 'Toast 1',
+      variant: 'success' as const,
+      cancel: { label: 'Dismiss', onClick: () => {} },
+      index: 0,
+      numberOfToasts: 1,
+    };
+
+    const toast2: ToastProps = {
+      ...base,
+      id: 1,
+      title: 'Toast 1',
+      variant: 'success' as const,
+      cancel: { label: 'Dismiss', onClick: () => console.log('different handler') },
       index: 0,
       numberOfToasts: 1,
     };
