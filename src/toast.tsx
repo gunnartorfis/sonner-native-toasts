@@ -1,10 +1,10 @@
 import * as React from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   Pressable,
   Text,
   View,
+  useWindowDimensions,
   type ViewProps,
 } from 'react-native';
 import Animated, {
@@ -209,7 +209,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
     }, [wiggleSharedValue]);
 
     // ScaleX: visual narrowing avoids layout-width changes that cause text rewrap
-    const screenWidth = Dimensions.get('window').width;
+    const { width: screenWidth } = useWindowDimensions();
     const stackScaleX = useDerivedValue(() => {
       'worklet';
       if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
@@ -371,7 +371,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
           if (
             isPressNearCloseButton({
               x,
-              viewWidth: Dimensions.get('window').width,
+              viewWidth: screenWidth,
             })
           ) {
             // On Android, the RNGH Tap gesture intercepts the touch before
@@ -386,7 +386,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
         }
         onPress?.();
       },
-      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress, isExpanded, closeButton, dismissible, onDismiss, id]
+      [position, positionCtx, enableStacking, numberOfToasts, toggleExpand, onPress, isExpanded, closeButton, dismissible, onDismiss, id, screenWidth]
     );
 
     const toastSwipeHandlerProps = React.useMemo(

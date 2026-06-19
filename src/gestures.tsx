@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Dimensions, Platform, type ViewStyle } from 'react-native';
+import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -14,7 +14,6 @@ import { useToastContext } from './context';
 import { easeInOutCircFn } from './easings';
 import type { ToastPosition, ToastProps } from './types';
 
-const { width: WINDOW_WIDTH } = Dimensions.get('window');
 
 type ToastSwipeHandlerProps = Pick<
   ToastProps,
@@ -44,6 +43,7 @@ export const ToastSwipeHandler: React.FC<
   position: positionProps,
   onPress,
 }) => {
+  const { width: windowWidth } = useWindowDimensions();
   const translate = useSharedValue(0);
   const {
     swipeToDismissDirection: direction,
@@ -93,7 +93,7 @@ export const ToastSwipeHandler: React.FC<
       }
 
       if (direction === 'left') {
-        const threshold = -WINDOW_WIDTH * 0.25;
+        const threshold = -windowWidth * 0.25;
         const shouldDismiss = translate.value < threshold;
 
         if (Math.abs(translate.value) < 16) {
@@ -105,7 +105,7 @@ export const ToastSwipeHandler: React.FC<
 
         if (shouldDismiss) {
           translate.value = withTiming(
-            -WINDOW_WIDTH,
+            -windowWidth,
             {
               easing: Easing.inOut(Easing.ease),
             },
@@ -137,7 +137,7 @@ export const ToastSwipeHandler: React.FC<
           });
         } else if (shouldDismiss) {
           translate.value = withTiming(
-            -WINDOW_WIDTH,
+            -windowWidth,
             {
               easing: Easing.inOut(Easing.ease),
             },
@@ -182,13 +182,13 @@ export const ToastSwipeHandler: React.FC<
     } else {
       aStyle.opacity = interpolate(
         translate.value,
-        [0, direction === 'left' ? -WINDOW_WIDTH : -60],
+        [0, direction === 'left' ? -windowWidth : -60],
         [1, 0]
       );
     }
 
     return aStyle;
-  }, [direction, translate]);
+  }, [direction, translate, windowWidth]);
 
   return (
     <GestureDetector gesture={Gesture.Race(tap, pan)}>
