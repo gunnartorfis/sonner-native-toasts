@@ -299,6 +299,7 @@ class ToastStore {
         if (removedToast) {
           this.clearTimer(removedToast.id);
           newIndex.delete(removedToast.id);
+          delete newToastRefs[removedToast.id];
           if (removedToast.id in updatedHeights) {
             delete updatedHeights[removedToast.id];
             heightsChanged = true;
@@ -362,6 +363,7 @@ class ToastStore {
         toasts: [],
         toastsById: new Map(),
         toastsCounter: 1,
+        toastRefs: {},
         toastTimers: {},
         toastHeights: {},
         toastHeightsVersion: this.state.toastHeightsVersion + 1,
@@ -384,6 +386,9 @@ class ToastStore {
     const updatedHeights = { ...this.state.toastHeights };
     delete updatedHeights[id];
 
+    const updatedRefs = { ...this.state.toastRefs };
+    delete updatedRefs[id];
+
     const shouldAutoCollapse =
       filteredToasts.length <= 1 && this.state.isExpanded;
 
@@ -394,6 +399,7 @@ class ToastStore {
       ...this.state,
       toasts: filteredToasts,
       toastsById: updatedIndex,
+      toastRefs: updatedRefs,
       toastHeights: updatedHeights,
       toastHeightsVersion: this.state.toastHeightsVersion + 1,
       isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
