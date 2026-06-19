@@ -36,7 +36,7 @@ The `position` prop determines where the toasts are displayed on the screen.
 
 ```tsx
 // Available positions:
-// top-center, bottom-center
+// top-center, bottom-center, center
 <Toaster position="bottom-center" />
 ```
 
@@ -206,12 +206,16 @@ toast.success('Saved!', {
 | maxFontSizeMultiplier            |             Caps how much toast text scales with the device's system font size.                    |          `-` |
 | toastOptions                     | These will act as default options for all toasts. See [toast()](/toast) for all available options. |         `{}` |
 | toastOptions.backgroundComponent |           Custom component rendered as toast background. Must use absolute positioning.            |          `-` |
-| gap                              |                                  Gap between toasts when expanded                                  |         `16` |
+| gap                              |                                  Gap between toasts when expanded                                  |         `14` |
 | icons                            |                                     Changes the default icons                                      |          `-` |
-| pauseWhenPageIsHidden            |                        Pauses toast timers when the app enters background.                         |         `{}` |
+| pauseWhenPageIsHidden            |                        Pauses toast timers when the app enters background.                         |      `false` |
 | `swipeToDismissDirection`        |                             Swipe direction to dismiss (`left`, `up`).                             |         `up` |
 | ToasterOverlayWrapper            |                                Custom component to wrap the Toaster.                               |        `div` |
 | ToastWrapper                     |                                 Custom component to wrap the Toast.                                |        `div` |
 | autoWiggleOnUpdate               |             Adds a wiggle animation on toast update. `never`, `toast-change`, `always`             |      `never` |
 | animation                        |                  Custom Reanimated entering/exiting animations applied to all toasts.              |          `-` |
 | richColors                       |                             Makes error and success state more colorful                            |      `false` |
+| duration                         |                   Default time in ms before a toast auto-closes (overridable per toast).           |      `4000` |
+| enableStacking                   |         Stack toasts behind the front one instead of listing them; tap to expand.                  |      `false` |
+| loadingIcon                      |                   Custom node rendered for loading/promise toasts instead of the spinner.          |          `-` |
+| positionerStyle                  |                   Style applied to the container that positions the toast stack.                   |          `-` |

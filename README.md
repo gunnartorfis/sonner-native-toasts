@@ -10,7 +10,7 @@ An opinionated toast component for React Native. A port of @emilkowalski's sonne
 - Multiple variants, including `success`, `error`, `warning`, `custom`, `promise`
 - Promise variant with built-in loading state
 - Custom JSX with the custom variant
-- Top or bottom positions
+- Top, bottom, or center positions
 - Title and description
 - Action button with a callback
 - Custom icons
@@ -50,6 +50,7 @@ To use this package, **you also need to install its peer dependencies**. Check o
 - [React Native Safe Area Context](https://docs.expo.dev/versions/latest/sdk/safe-area-context/)
 - [React Native SVG](https://github.com/software-mansion/react-native-svg)
 - [React Native Screens](https://github.com/software-mansion/react-native-screens)
+- [React Native Worklets](https://github.com/margelo/react-native-worklets)
 
 ## Usage
 
