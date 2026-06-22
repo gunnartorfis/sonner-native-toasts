@@ -6,10 +6,10 @@
 applied to the latest published minor release only. If you are on an older
 version, upgrade to the latest before reporting.
 
-| Version  | Supported          |
-| -------- | ------------------ |
-| 0.26.x   | :white_check_mark: |
-| < 0.26   | :x:                |
+| Version      | Supported          |
+| ------------ | ------------------ |
+| latest minor | :white_check_mark: |
+| older minors | :x:                |
 
 ## Reporting a Vulnerability
 
