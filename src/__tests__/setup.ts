@@ -26,6 +26,11 @@ jest.mock('react-native', () => {
       create: <T extends Record<string, unknown>>(styles: T): T => styles,
       flatten: <T>(style: T): T => style,
     },
+    AppState: {
+      currentState: 'active',
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    },
+    useColorScheme: jest.fn(() => 'light'),
   };
 });
 
@@ -33,28 +38,17 @@ jest.mock('react-native', () => {
 jest.mock('react-native-reanimated', () => {
   // Use the mocked View from react-native
   const View = (props: MockComponentProps) => props.children;
-  return {
-    default: {
-      View: View,
-      createAnimatedComponent: (component: React.ComponentType) => component,
-      interpolate: jest.fn(),
-      withTiming: jest.fn((value) => value),
-      withRepeat: jest.fn((value) => value),
-      useDerivedValue: jest.fn((fn) => ({ value: fn() })),
-      useSharedValue: jest.fn((value) => ({ value })),
-      useAnimatedStyle: jest.fn((fn) => fn()),
-      runOnJS: jest.fn((fn) => fn),
-      Easing: {
-        inOut: jest.fn(),
-        ease: jest.fn(),
-        elastic: jest.fn(),
-        bezier: jest.fn(() => jest.fn()),
-        bezierFn: jest.fn(() => jest.fn()),
-      },
-      LinearTransition: {
-        easing: jest.fn(),
-      },
-    },
+  const sharedMock = {
+    View,
+    createAnimatedComponent: (component: React.ComponentType) => component,
+    interpolate: jest.fn(() => 1),
+    withTiming: jest.fn((value: unknown) => value),
+    withRepeat: jest.fn((value: unknown) => value),
+    useDerivedValue: jest.fn((fn: () => unknown) => ({ value: fn() })),
+    useSharedValue: jest.fn((value: unknown) => ({ value })),
+    useAnimatedStyle: jest.fn((fn: () => unknown) => fn()),
+    useReducedMotion: jest.fn(() => false),
+    runOnJS: jest.fn((fn: unknown) => fn),
     Easing: {
       inOut: jest.fn(),
       ease: jest.fn(),
@@ -62,23 +56,50 @@ jest.mock('react-native-reanimated', () => {
       bezier: jest.fn(() => jest.fn()),
       bezierFn: jest.fn(() => jest.fn()),
     },
-    withTiming: jest.fn((value) => value),
-    withRepeat: jest.fn((value) => value),
-    useDerivedValue: jest.fn((fn) => ({ value: fn() })),
-    useSharedValue: jest.fn((value) => ({ value })),
-    useAnimatedStyle: jest.fn((fn) => fn()),
-    runOnJS: jest.fn((fn) => fn),
     LinearTransition: {
       easing: jest.fn(),
     },
   };
+  return {
+    __esModule: true,
+    default: sharedMock,
+    ...sharedMock,
+  };
 });
 
 // Mock react-native-safe-area-context
-jest.mock('react-native-safe-area-context', () => ({
-  useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
-  SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
+jest.mock('react-native-safe-area-context', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  const defaultInsets = { top: 44, bottom: 34, left: 0, right: 0 };
+  const SafeAreaInsetsContext = React.createContext(defaultInsets);
+  return {
+    useSafeAreaInsets: () => defaultInsets,
+    SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
+    SafeAreaInsetsContext,
+    initialWindowMetrics: {
+      insets: defaultInsets,
+      frame: { x: 0, y: 0, width: 375, height: 812 },
+    },
+  };
+});
+
+// Mock react-native-screens
+jest.mock('react-native-screens', () => ({
+  __esModule: true,
+  FullWindowOverlay: ({ children }: { children?: React.ReactNode }) => children,
 }));
+
+// Mock react-native-svg
+jest.mock('react-native-svg', () => {
+  const Passthrough = ({ children }: { children?: React.ReactNode }) => children ?? null;
+  return {
+    __esModule: true,
+    default: Passthrough,
+    Svg: Passthrough,
+    Path: Passthrough,
+    Circle: Passthrough,
+  };
+});
 
 // Mock react-native-gesture-handler
 jest.mock('react-native-gesture-handler', () => {
