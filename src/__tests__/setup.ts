@@ -85,6 +85,7 @@ jest.mock('react-native-safe-area-context', () => {
 
 // Mock react-native-screens
 jest.mock('react-native-screens', () => ({
+  __esModule: true,
   FullWindowOverlay: ({ children }: { children?: React.ReactNode }) => children,
 }));
 
