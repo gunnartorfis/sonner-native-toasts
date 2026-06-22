@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.26.3](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.2...v0.26.3) (2026-06-22)
+
+
+### Bug Fixes
+
+* free toastRefs entries when toasts are removed ([d9410a3](https://github.com/gunnartorfis/sonner-native-toasts/commit/d9410a31cba9f071a4da2e71d340bef065fa41ef))
+* use useWindowDimensions so swipe/stack width tracks rotation ([4f9172d](https://github.com/gunnartorfis/sonner-native-toasts/commit/4f9172d74cd0684834e900ca721322474c9349ae))
+
 ## [0.26.2](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.1...v0.26.2) (2026-06-16)
 
 
