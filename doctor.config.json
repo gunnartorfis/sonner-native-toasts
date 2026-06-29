@@ -1,0 +1,28 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "rules": {
+    "react-doctor/no-react19-deprecated-apis": "off"
+  },
+  "ignore": {
+    "overrides": [
+      {
+        "files": ["src/toast-store.ts"],
+        "rules": ["react-doctor/async-defer-await"]
+      },
+      {
+        "files": ["package.json"],
+        "rules": ["deslop/unused-dev-dependency"]
+      },
+      {
+        "files": ["**/components/toast-demo.*.tsx"],
+        "rules": [
+          "react-doctor/no-giant-component",
+          "react-doctor/no-inline-exhaustive-style",
+          "react-doctor/rendering-hydration-mismatch-time",
+          "react-doctor/rn-prefer-expo-image",
+          "deslop/unused-export"
+        ]
+      }
+    ]
+  }
+}
