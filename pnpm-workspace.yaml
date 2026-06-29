@@ -1,3 +1,9 @@
 packages:
   - 'example'
   - 'docs'
+
+# Supply-chain hardening (react-doctor/require-pnpm-hardening)
+# Delay installs of freshly published versions so malware has time to be caught.
+minimumReleaseAge: 10080 # 7 days, in minutes
+# Reject packages whose trust signals (provenance/signatures) weaken between updates.
+trustPolicy: no-downgrade
