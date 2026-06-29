@@ -221,6 +221,7 @@ const ToasterUI: React.FC<
             .map((toastToRender, index) => {
               const ToastToRender = (
                 <Toast
+                  key={toastToRender.id}
                   {...props}
                   {...toastToRender}
                   parentStyle={props.style}
@@ -229,7 +230,6 @@ const ToasterUI: React.FC<
                   onAutoClose={onAutoClose}
                   index={index}
                   ref={toastStore.getToastRef(toastToRender.id)}
-                  key={toastToRender.id}
                   numberOfToasts={toastsForPosition.length}
                   orderedToastIds={orderedToastIds}
                 />
