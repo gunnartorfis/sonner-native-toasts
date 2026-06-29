@@ -612,7 +612,7 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
 
 Toast.displayName = 'Toast';
 
-export const ToastIcon: React.FC<
+const ToastIcon: React.FC<
   Pick<ToastProps, 'variant'> & {
     invert: boolean;
     richColors: boolean;

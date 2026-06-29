@@ -79,7 +79,7 @@ type GetToastAnimationParams = {
   stackGap?: number;
 };
 
-export const getToastEntering = ({ position }: GetToastAnimationParams) => {
+const getToastEntering = ({ position }: GetToastAnimationParams) => {
   'worklet';
 
   const animations = {
@@ -114,7 +114,7 @@ export const getToastEntering = ({ position }: GetToastAnimationParams) => {
   };
 };
 
-export const getToastExiting = ({
+const getToastExiting = ({
   position,
   isHiddenByLimit,
   numberOfToasts,
