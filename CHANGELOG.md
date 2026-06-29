@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.4](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.3...v0.26.4) (2026-06-29)
+
+
+### Bug Fixes
+
+* prevent spread from overwriting Toaster list key ([03f251b](https://github.com/gunnartorfis/sonner-native-toasts/commit/03f251b736239ba352b094caf8ab075c943c0d8a))
+
 ## [0.26.3](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.2...v0.26.3) (2026-06-22)
 
 
