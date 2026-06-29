@@ -15,16 +15,10 @@ import {
 
 export type ToasterAnimationKey = 'default' | 'fade' | 'slide';
 
-export const TOASTER_ANIMATION_KEYS: ToasterAnimationKey[] = [
-  'default',
-  'fade',
-  'slide',
-];
-
 // `undefined` means "don't pass an `animation` prop to the Toaster" — i.e.
 // fall through to the library default. The named entries showcase the new
 // `animation` prop with concrete Reanimated builders.
-export const TOASTER_ANIMATION_PRESETS: Record<
+const TOASTER_ANIMATION_PRESETS: Record<
   ToasterAnimationKey,
   ToastAnimation | undefined
 > = {
