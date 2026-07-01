@@ -168,11 +168,6 @@ const ToasterUI: React.FC<
     }),
     [toastHeights, toastHeightsVersion, isExpanded]
   );
-  const orderedToasts = React.useMemo(
-    () => orderToastsFromPosition(toasts, position),
-    [toasts, position]
-  );
-
   const onDismiss = React.useCallback<
     NonNullable<React.ComponentProps<typeof Toast>['onDismiss']>
   >((id) => {
@@ -200,11 +195,13 @@ const ToasterUI: React.FC<
   return (
     <ToastContext.Provider value={value}>
       <DynamicToastContext.Provider value={dynamicValue}>
-      {possiblePositions.map((currentPosition, positionIndex) => {
-        const toastsForPosition = orderedToasts.filter(
-          (possibleToast) =>
-            (!possibleToast.position && positionIndex === 0) ||
-            possibleToast.position === currentPosition
+      {possiblePositions.map((currentPosition) => {
+        const toastsForPosition = orderToastsFromPosition(
+          toasts.filter(
+            (possibleToast) =>
+              (possibleToast.position ?? position) === currentPosition
+          ),
+          currentPosition
         );
         const orderedToastIds = getOrderedToastIds(
           toastsForPosition,
