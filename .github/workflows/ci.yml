@@ -41,14 +41,6 @@ jobs:
       - name: Run unit tests
         run: pnpm test --maxWorkers=2 --coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
-        continue-on-error: true
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-
   build-library:
     runs-on: ubuntu-latest
     steps:
