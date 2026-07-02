@@ -7,3 +7,13 @@ packages:
 minimumReleaseAge: 10080 # 7 days, in minutes
 # Reject packages whose trust signals (provenance/signatures) weaken between updates.
 trustPolicy: no-downgrade
+
+# Only these dependencies may run install-time build scripts.
+onlyBuiltDependencies:
+  - '@evilmartians/lefthook'
+  - core-js
+  - core-js-pure
+  - unrs-resolver
+
+overrides:
+  '@expo/log-box': 55.0.10
