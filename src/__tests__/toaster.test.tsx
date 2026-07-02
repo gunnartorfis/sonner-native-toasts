@@ -1,8 +1,10 @@
 import { act } from 'react';
 import TestRenderer from 'react-test-renderer';
+import { Positioner } from '../positioner';
 import { Toaster } from '../toaster';
 import { toast } from '../toast-fns';
 import { toastStore } from '../toast-store';
+import type { ToastPosition } from '../types';
 
 const resetStore = () => {
   toastStore['state'] = {
@@ -69,6 +71,93 @@ describe('Toaster (render)', () => {
     const json = textOf(renderer);
     expect(json).toContain('Title here');
     expect(json).toContain('Some description');
+  });
+
+  describe('position bucketing', () => {
+    const findPositioner = (
+      renderer: TestRenderer.ReactTestRenderer,
+      position: ToastPosition
+    ) => {
+      const match = renderer.root
+        .findAllByType(Positioner)
+        .find((positioner) => positioner.props.position === position);
+      if (!match) {
+        throw new Error(`No Positioner rendered for position ${position}`);
+      }
+      return match;
+    };
+
+    const positionerContains = (
+      positioner: TestRenderer.ReactTestInstance,
+      title: string
+    ): boolean => {
+      return (
+        positioner.findAll((node) => node.props?.children === title).length > 0
+      );
+    };
+
+    it('keeps position-less toasts in the Toaster default container when another toast uses an explicit position', () => {
+      let renderer!: TestRenderer.ReactTestRenderer;
+      act(() => {
+        renderer = TestRenderer.create(<Toaster position="bottom-center" />);
+      });
+      act(() => {
+        toast('plain');
+        toast('pinned', { position: 'top-center' });
+      });
+
+      expect(
+        positionerContains(findPositioner(renderer, 'bottom-center'), 'plain')
+      ).toBe(true);
+      expect(
+        positionerContains(findPositioner(renderer, 'top-center'), 'pinned')
+      ).toBe(true);
+      expect(
+        positionerContains(findPositioner(renderer, 'top-center'), 'plain')
+      ).toBe(false);
+    });
+
+    it('keeps position-less toasts in a center default container alongside an explicit bottom-center toast', () => {
+      let renderer!: TestRenderer.ReactTestRenderer;
+      act(() => {
+        renderer = TestRenderer.create(<Toaster position="center" />);
+      });
+      act(() => {
+        toast('floaty');
+        toast('grounded', { position: 'bottom-center' });
+      });
+
+      expect(
+        positionerContains(findPositioner(renderer, 'center'), 'floaty')
+      ).toBe(true);
+      expect(
+        positionerContains(
+          findPositioner(renderer, 'bottom-center'),
+          'grounded'
+        )
+      ).toBe(true);
+      expect(
+        positionerContains(findPositioner(renderer, 'bottom-center'), 'floaty')
+      ).toBe(false);
+    });
+
+    it('orders a top-center container newest-first even when the Toaster default is bottom-center', () => {
+      let renderer!: TestRenderer.ReactTestRenderer;
+      act(() => {
+        renderer = TestRenderer.create(<Toaster position="bottom-center" />);
+      });
+      act(() => {
+        toast('a', { position: 'top-center' });
+        toast('b', { position: 'top-center' });
+      });
+
+      const topPositioner = findPositioner(renderer, 'top-center');
+      const titlesInRenderOrder = topPositioner
+        .findAll((node) => node.props?.children === 'a' || node.props?.children === 'b')
+        .map((node) => node.props.children);
+      // top-center renders newest first (same as a top-center default Toaster)
+      expect(titlesInRenderOrder).toEqual(['b', 'a']);
+    });
   });
 
   it('removes the toast after dismiss', () => {
