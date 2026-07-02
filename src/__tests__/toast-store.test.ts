@@ -1,3 +1,4 @@
+import { ENTERING_ANIMATION_DURATION } from '../animations';
 import { toastStore } from '../toast-store';
 import type { ToastRef } from '../types';
 import type React from 'react';
@@ -308,6 +309,29 @@ describe('ToastStore', () => {
       expect(state.toastTimers[id2]).toBeDefined();
       // Note: With fake timers, the new setTimeout is created but isPaused state
       // depends on the implementation details. Let's just verify timers exist.
+    });
+
+    it('clears the running timer when a toast is updated to duration: Infinity', () => {
+      const id = toastStore.addToast({ id: 'pin-me', title: 'Uploading', duration: 5000, variant: 'info' as const });
+
+      toastStore.addToast({ id: 'pin-me', title: 'Uploading', duration: Infinity, variant: 'info' as const });
+
+      jest.advanceTimersByTime(60000);
+
+      const state = toastStore.getSnapshot();
+      expect(state.toastsById.has(id)).toBe(true);
+      expect(state.toastTimers[id]).toBeUndefined();
+    });
+
+    it('still auto-dismisses when updated from Infinity to a finite duration', () => {
+      const id = toastStore.addToast({ id: 'unpin-me', title: 'Pinned', duration: Infinity, variant: 'info' as const });
+
+      toastStore.addToast({ id: 'unpin-me', title: 'Pinned', duration: 2000, variant: 'info' as const });
+
+      jest.advanceTimersByTime(ENTERING_ANIMATION_DURATION + 2000 + 1);
+
+      const state = toastStore.getSnapshot();
+      expect(state.toastsById.has(id)).toBe(false);
     });
 
     it('should enforce minimum 1 second when resuming timer', () => {
