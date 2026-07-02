@@ -41,7 +41,7 @@ type ToastInternalProps = ToastProps & {
   parentStyles?: ToastStyles;
 };
 
-export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
+const ToastComponent = React.forwardRef<ToastRef, ToastInternalProps>(
   (
     {
       id,
@@ -610,7 +610,11 @@ export const Toast = React.forwardRef<ToastRef, ToastInternalProps>(
   }
 );
 
-Toast.displayName = 'Toast';
+ToastComponent.displayName = 'Toast';
+
+// Default shallow comparison — effective because ToasterUI hands out
+// stable identities for orderedToastIds/callbacks/toast entries.
+export const Toast = React.memo(ToastComponent);
 
 const ToastIcon: React.FC<
   Pick<ToastProps, 'variant'> & {

@@ -20,6 +20,16 @@ const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
 const EMPTY_ICONS: NonNullable<ToasterProps['icons']> = {};
 const EMPTY_ANIMATION: NonNullable<ToasterProps['animation']> = {};
 
+type PositionData = {
+  position: ToastPosition;
+  toasts: ToastProps[];
+  orderedToastIds: Array<string | number>;
+};
+
+function areArrayItemsIdentical<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((item, i) => item === b[i]);
+}
+
 function orderToastsFromPosition(
   currentToasts: ToastProps[],
   position: ToastPosition
@@ -180,22 +190,27 @@ const ToasterUI: React.FC<
     toastStore.dismissToast(id, 'onAutoClose');
   }, []);
 
-  const possiblePositions = React.useMemo(
-    () =>
-      allPositions.filter(
+  // Per-position render data with stable identities: entries (and their
+  // toasts/orderedToastIds arrays) are reused from the previous render when
+  // their contents are unchanged, so React.memo on Toast can bail out for
+  // positions untouched by a store change.
+  // useState (not useRef): the react-hooks/refs rule forbids ref reads in
+  // render; this Map is a memo table whose writes are render-idempotent.
+  const [positionsCache] = React.useState(
+    () => new Map<string, PositionData>()
+  );
+  const positionsData = React.useMemo(() => {
+    const previous = new Map(positionsCache);
+    positionsCache.clear();
+    const data = allPositions
+      .filter(
         (possiblePosition) =>
           toasts.find(
             (positionedToast) =>
               positionedToast.position === possiblePosition
           ) || position === possiblePosition
-      ),
-    [toasts, position]
-  );
-
-  return (
-    <ToastContext.Provider value={value}>
-      <DynamicToastContext.Provider value={dynamicValue}>
-      {possiblePositions.map((currentPosition) => {
+      )
+      .map((currentPosition) => {
         const toastsForPosition = orderToastsFromPosition(
           toasts.filter(
             (possibleToast) =>
@@ -208,6 +223,26 @@ const ToasterUI: React.FC<
           currentPosition,
           enableStacking
         );
+        const previousEntry = previous.get(currentPosition);
+        const entry =
+          previousEntry &&
+          areArrayItemsIdentical(previousEntry.toasts, toastsForPosition) &&
+          areArrayItemsIdentical(
+            previousEntry.orderedToastIds,
+            orderedToastIds
+          )
+            ? previousEntry
+            : { position: currentPosition, toasts: toastsForPosition, orderedToastIds };
+        positionsCache.set(currentPosition, entry);
+        return entry;
+      });
+    return data;
+  }, [positionsCache, toasts, position, enableStacking]);
+
+  return (
+    <ToastContext.Provider value={value}>
+      <DynamicToastContext.Provider value={dynamicValue}>
+      {positionsData.map(({ position: currentPosition, toasts: toastsForPosition, orderedToastIds }) => {
         return (
         <Positioner
           key={currentPosition}

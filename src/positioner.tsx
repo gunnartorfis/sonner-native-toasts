@@ -31,13 +31,20 @@ export const Positioner: React.FC<
   const { top, bottom } = useInsets();
 
   const resolvedPosition = position || 'bottom-center';
-  const containerStyle = getContainerStyle(resolvedPosition);
+  const containerStyle = React.useMemo(
+    () => getContainerStyle(resolvedPosition),
+    [resolvedPosition]
+  );
 
-  const insetValues = getInsetValues({
-    position: resolvedPosition,
-    offset,
-    safeAreaInsets: { top, bottom },
-  });
+  const insetValues = React.useMemo(
+    () =>
+      getInsetValues({
+        position: resolvedPosition,
+        offset,
+        safeAreaInsets: { top, bottom },
+      }),
+    [resolvedPosition, offset, top, bottom]
+  );
 
   const handleOutsidePress = React.useCallback(() => {
     if (isExpanded) {
@@ -45,13 +52,17 @@ export const Positioner: React.FC<
     }
   }, [isExpanded, collapse]);
 
-  const outsidePressableStyle = calculateOutsidePressableArea({
-    position: resolvedPosition,
-    toastHeights,
-    gap,
-    visibleToasts: visibleToasts || 3,
-    insetValues,
-  });
+  const outsidePressableStyle = React.useMemo(
+    () =>
+      calculateOutsidePressableArea({
+        position: resolvedPosition,
+        toastHeights,
+        gap,
+        visibleToasts: visibleToasts || 3,
+        insetValues,
+      }),
+    [resolvedPosition, toastHeights, gap, visibleToasts, insetValues]
+  );
 
   // Don't show expand/collapse for center position
   const shouldAllowCollapse = resolvedPosition !== 'center' && isExpanded;
