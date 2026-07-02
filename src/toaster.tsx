@@ -200,8 +200,6 @@ const ToasterUI: React.FC<
     () => new Map<string, PositionData>()
   );
   const positionsData = React.useMemo(() => {
-    const previous = new Map(positionsCache);
-    positionsCache.clear();
     const data = allPositions
       .filter(
         (possiblePosition) =>
@@ -223,7 +221,11 @@ const ToasterUI: React.FC<
           currentPosition,
           enableStacking
         );
-        const previousEntry = previous.get(currentPosition);
+        // Read-then-overwrite per key, never clear: an interrupted render
+        // leaves every entry either previous or freshly computed — both
+        // valid baselines for the next render's identity comparison. The
+        // map is bounded by allPositions (3 entries).
+        const previousEntry = positionsCache.get(currentPosition);
         const entry =
           previousEntry &&
           areArrayItemsIdentical(previousEntry.toasts, toastsForPosition) &&

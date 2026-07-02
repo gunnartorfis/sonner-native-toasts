@@ -74,16 +74,22 @@ describe('Toaster (re-render blast radius)', () => {
     expect(before.length).toBeGreaterThan(0);
     const idsBefore = before[before.length - 1]!.orderedToastIds;
 
+    let idB: string | number = '';
     act(() => {
-      toast('B', { position: 'bottom-center' });
+      idB = toast('B', { position: 'bottom-center' });
+    });
+    // A height write flows through DynamicToastContext and legitimately
+    // re-renders every toast — forcing A to re-render so the identity of
+    // its orderedToastIds prop is verified unconditionally.
+    act(() => {
+      toastStore.setToastHeight(idB, 80);
     });
 
     const after = callsFor(idA);
-    if (after.length > before.length) {
-      // A re-rendered; the array it receives must be the SAME object,
-      // or React.memo can never take effect.
-      expect(after[after.length - 1]!.orderedToastIds).toBe(idsBefore);
-    }
+    expect(after.length).toBeGreaterThan(before.length);
+    // A re-rendered; the array it receives must be the SAME object,
+    // or React.memo can never take effect.
+    expect(after[after.length - 1]!.orderedToastIds).toBe(idsBefore);
   });
 
   it('does not re-render a toast when a toast is added to a different position', () => {
