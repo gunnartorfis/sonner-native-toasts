@@ -84,12 +84,12 @@ class ToastStore {
     duration: number;
     onComplete: () => void;
   }) => {
+    this.clearTimer(id);
+
     // Don't start timer for infinite duration
     if (duration === Infinity) {
       return;
     }
-
-    this.clearTimer(id);
 
     const timeout = setTimeout(() => {
       onComplete();
@@ -259,7 +259,7 @@ class ToastStore {
         return currentToast;
       });
 
-      // Restart timer if duration changed
+      // Restart the auto-dismiss timer on every non-promise update
       if (!newToast.promiseOptions) {
         this.startTimer({
           id,
