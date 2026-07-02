@@ -200,44 +200,37 @@ const ToasterUI: React.FC<
     () => new Map<string, PositionData>()
   );
   const positionsData = React.useMemo(() => {
-    const data = allPositions
-      .filter(
-        (possiblePosition) =>
-          toasts.find(
-            (positionedToast) =>
-              positionedToast.position === possiblePosition
-          ) || position === possiblePosition
-      )
-      .map((currentPosition) => {
-        const toastsForPosition = orderToastsFromPosition(
-          toasts.filter(
-            (possibleToast) =>
-              (possibleToast.position ?? position) === currentPosition
-          ),
-          currentPosition
-        );
-        const orderedToastIds = getOrderedToastIds(
-          toastsForPosition,
-          currentPosition,
-          enableStacking
-        );
-        // Read-then-overwrite per key, never clear: an interrupted render
-        // leaves every entry either previous or freshly computed — both
-        // valid baselines for the next render's identity comparison. The
-        // map is bounded by allPositions (3 entries).
-        const previousEntry = positionsCache.get(currentPosition);
-        const entry =
-          previousEntry &&
-          areArrayItemsIdentical(previousEntry.toasts, toastsForPosition) &&
-          areArrayItemsIdentical(
-            previousEntry.orderedToastIds,
-            orderedToastIds
-          )
-            ? previousEntry
-            : { position: currentPosition, toasts: toastsForPosition, orderedToastIds };
-        positionsCache.set(currentPosition, entry);
-        return entry;
-      });
+    const data: PositionData[] = [];
+    for (const currentPosition of allPositions) {
+      const toastsForPosition = orderToastsFromPosition(
+        toasts.filter(
+          (possibleToast) =>
+            (possibleToast.position ?? position) === currentPosition
+        ),
+        currentPosition
+      );
+      if (toastsForPosition.length === 0 && position !== currentPosition) {
+        continue;
+      }
+      const orderedToastIds = getOrderedToastIds(
+        toastsForPosition,
+        currentPosition,
+        enableStacking
+      );
+      // Read-then-overwrite per key, never clear: an interrupted render
+      // leaves every entry either previous or freshly computed — both
+      // valid baselines for the next render's identity comparison. The
+      // map is bounded by allPositions (3 entries).
+      const previousEntry = positionsCache.get(currentPosition);
+      const entry =
+        previousEntry &&
+        areArrayItemsIdentical(previousEntry.toasts, toastsForPosition) &&
+        areArrayItemsIdentical(previousEntry.orderedToastIds, orderedToastIds)
+          ? previousEntry
+          : { position: currentPosition, toasts: toastsForPosition, orderedToastIds };
+      positionsCache.set(currentPosition, entry);
+      data.push(entry);
+    }
     return data;
   }, [positionsCache, toasts, position, enableStacking]);
 

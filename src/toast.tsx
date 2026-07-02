@@ -5,7 +5,6 @@ import {
   Text,
   View,
   useWindowDimensions,
-  type ViewProps,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -18,9 +17,10 @@ import { STACKING_ANIMATION_DURATION, useToastLayoutAnimations } from './animati
 import { toastDefaultValues } from './constants';
 import { useDynamicToastContext, useToastContext } from './context';
 import { easeOutQuartFn } from './easings';
+import { CloseButton } from './close-button';
 import { ToastSwipeHandler } from './gestures';
-import { CircleCheck, CircleX, Info, TriangleAlert, X } from './icons';
 import { isPressNearCloseButton } from './press-utils';
+import { ToastIcon } from './toast-icon';
 import { toastStore } from './toast-store';
 import {
   isToastAction,
@@ -29,11 +29,7 @@ import {
   type ToastStyles,
 } from './types';
 import { useAppStateListener } from './use-app-state';
-import {
-  useDefaultStyles,
-  useIconColor,
-  type DefaultStyles,
-} from './use-default-styles';
+import { useDefaultStyles } from './use-default-styles';
 import { useToastPosition } from './use-toast-position';
 
 type ToastInternalProps = ToastProps & {
@@ -616,27 +612,6 @@ ToastComponent.displayName = 'Toast';
 // stable identities for orderedToastIds/callbacks/toast entries.
 export const Toast = React.memo(ToastComponent);
 
-const ToastIcon: React.FC<
-  Pick<ToastProps, 'variant'> & {
-    invert: boolean;
-    richColors: boolean;
-  }
-> = ({ variant, invert, richColors }) => {
-  const color = useIconColor({ variant, invert, richColors });
-
-  switch (variant) {
-    case 'success':
-      return <CircleCheck size={20} color={color} />;
-    case 'error':
-      return <CircleX size={20} color={color} />;
-    case 'warning':
-      return <TriangleAlert size={20} color={color} />;
-    default:
-    case 'info':
-      return <Info size={20} color={color} />;
-  }
-};
-
 const elevationStyle = {
   shadowOpacity: 0.0015 * 4 + 0.1,
   shadowRadius: 3 * 4,
@@ -647,47 +622,3 @@ const elevationStyle = {
   elevation: 4,
 };
 
-const CloseButton: React.FC<{
-  dismissible: ToastProps['dismissible'];
-  close: ToastProps['close'];
-  closeButton: ToastProps['closeButton'];
-  onDismiss: ToastProps['onDismiss'];
-  id: ToastProps['id'];
-  closeButtonStyle?: ViewProps['style'];
-  closeButtonIconStyle?: ViewProps['style'];
-  defaultStyles: DefaultStyles;
-}> = ({
-  dismissible,
-  close,
-  closeButton,
-  onDismiss,
-  id,
-  closeButtonStyle,
-  defaultStyles,
-  closeButtonIconStyle,
-}) => {
-  if (!dismissible) {
-    return null;
-  }
-
-  if (close) {
-    return close;
-  }
-
-  if (closeButton) {
-    return (
-      <Pressable
-        onPress={() => onDismiss?.(id)}
-        hitSlop={10}
-        style={closeButtonStyle}
-      >
-        <X
-          size={20}
-          color={defaultStyles.closeButtonColor}
-          style={closeButtonIconStyle}
-        />
-      </Pressable>
-    );
-  }
-  return null;
-};
