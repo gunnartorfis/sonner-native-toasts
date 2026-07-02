@@ -39,7 +39,7 @@
     "clean": "del-cli lib",
     "prepare": "bob build",
     "release": "release-it",
-    "doctor": "npx react-doctor@latest"
+    "doctor": "npx react-doctor@0.5.8"
   },
   "keywords": [
     "react-native",
