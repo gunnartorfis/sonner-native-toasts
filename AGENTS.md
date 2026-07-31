@@ -56,7 +56,7 @@ Strict mode with extra checks: `noUncheckedIndexedAccess`, `noUnusedLocals`,
     intentional.
 - Prettier: single quotes, `trailingComma: 'es5'`, `tabWidth: 2`.
 - Commits follow Conventional Commits; lefthook pre-commit hooks enforce the
-  message format and run lint/tests.
+  message format and run lint and typecheck (tests run in CI).
 
 ## Architecture
 

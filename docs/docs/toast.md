@@ -57,7 +57,7 @@ toast.warning('My warning toast');
 
 ### Action
 
-Renders an action button with a callback function. The action object should contain a label and an `onClick` function. The action and its label can be customized with the `actionButtonStyles` and `actionButtonTextStyles` params, respectively.
+Renders an action button with a callback function. The action object should contain a label and an `onClick` function. The action and its label can be customized with the `actionButtonStyle` and `actionButtonTextStyle` params, respectively.
 
 ```jsx
 toast('My action toast', {
@@ -78,7 +78,7 @@ toast('My action toast', {
 
 ### Cancel
 
-Renders a cancel button with a callback function. The cancel object should contain a label and an `onClick` function. The cancel button and its label can be customized with the `cancelButtonStyles` and `cancelButtonTextStyles` params, respectively.
+Renders a cancel button with a callback function. The cancel object should contain a label and an `onClick` function. The cancel button and its label can be customized with the `cancelButtonStyle` and `cancelButtonTextStyle` params, respectively.
 
 ```jsx
 toast('My cancel toast', {
@@ -235,14 +235,17 @@ Toasts can also be automatically wiggled by passing the `autoWiggleOnUpdate` pro
 | dismissible            |                     If `false`, it'll prevent the user from dismissing the toast.                      |       `true` |
 | icon                   |                      Icon displayed in front of toast's text, aligned vertically.                      |          `-` |
 | action                 |                      Renders a primary button, clicking it will close the toast.                       |          `-` |
+| close                  |                    Custom close-button element; replaces the default close button.                    |          `-` |
+| styles                 |       Per-toast style overrides for each toast slot (`toast`, `title`, `description`, and more).       |          `-` |
 | id                     |                                        Custom id for the toast.                                        |          `-` |
+| onPress                | Called when the toast is pressed. With `enableStacking` and multiple toasts, also toggles expansion.   |          `-` |
 | onDismiss              |       The function gets called when either the close button is clicked, or the toast is swiped.        |          `-` |
 | onAutoClose            | Function that gets called when the toast disappears automatically after it's timeout (duration` prop). |          `-` |
 | unstyled               |                  Removes the default styling, which allows for easier customization.                   |      `false` |
-| actionButtonStyles     |                                      Styles for the action button                                      |         `{}` |
-| actionButtonTextStyles |                                   Styles for the action button text                                    |         `{}` |
-| cancelButtonStyles     |                                      Styles for the cancel button                                      |         `{}` |
-| cancelButtonTextStyles |                                   Styles for the cancel button text                                    |         `{}` |
+| actionButtonStyle      |                                      Styles for the action button                                      |         `{}` |
+| actionButtonTextStyle  |                                   Styles for the action button text                                    |         `{}` |
+| cancelButtonStyle      |                                      Styles for the cancel button                                      |         `{}` |
+| cancelButtonTextStyle  |                                   Styles for the cancel button text                                    |         `{}` |
 | richColors             |                              Makes error and success state more colorful                               |      `false` |
 | backgroundComponent    |               Custom component rendered as toast background. Overrides Toaster default.                |          `-` |
 | animation              |                  Custom Reanimated entering/exiting animations for this specific toast.               |          `-` |
