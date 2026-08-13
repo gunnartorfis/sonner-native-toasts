@@ -45,9 +45,9 @@ const Row: React.FC<{ label: string; onPress: () => void }> = ({
 
 const MultipleToastersScreen: React.FC = () => {
   const [sheetVisible, setSheetVisible] = React.useState(false);
-  const [lastSheetToast, setLastSheetToast] = React.useState<
-    string | number | null
-  >(null);
+  // A ref, not state: it is only ever written and read from handlers, so
+  // storing it in state would re-render the screen for nothing.
+  const lastSheetToast = React.useRef<string | number | null>(null);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -109,13 +109,11 @@ const MultipleToastersScreen: React.FC = () => {
 
               <Row
                 label="Sheet toast"
-                onPress={() =>
-                  setLastSheetToast(
-                    toast('Toast inside the sheet', {
-                      toasterId: SHEET_CHANNEL,
-                    })
-                  )
-                }
+                onPress={() => {
+                  lastSheetToast.current = toast('Toast inside the sheet', {
+                    toasterId: SHEET_CHANNEL,
+                  });
+                }}
               />
               <Row
                 label="Three sheet toasts (visibleToasts=2 here)"
@@ -146,9 +144,9 @@ const MultipleToastersScreen: React.FC = () => {
               <Row
                 label="Dismiss the last sheet toast by id"
                 onPress={() => {
-                  if (lastSheetToast !== null) {
-                    toast.dismiss(lastSheetToast);
-                    setLastSheetToast(null);
+                  if (lastSheetToast.current !== null) {
+                    toast.dismiss(lastSheetToast.current);
+                    lastSheetToast.current = null;
                   }
                 }}
               />
