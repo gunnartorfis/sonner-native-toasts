@@ -383,8 +383,15 @@ class ToastStore {
       (currentToast) => currentToast.id !== id
     );
 
-    const updatedHeights = { ...this.state.toastHeights };
-    delete updatedHeights[id];
+    // Only touch heights (and bump the version) when this toast actually had
+    // a height entry — an unconditional bump would re-render every toast at
+    // every position through DynamicToastContext.
+    const heightsChanged = id in this.state.toastHeights;
+    let updatedHeights = this.state.toastHeights;
+    if (heightsChanged) {
+      updatedHeights = { ...updatedHeights };
+      delete updatedHeights[id];
+    }
 
     const updatedRefs = { ...this.state.toastRefs };
     delete updatedRefs[id];
@@ -401,7 +408,9 @@ class ToastStore {
       toastsById: updatedIndex,
       toastRefs: updatedRefs,
       toastHeights: updatedHeights,
-      toastHeightsVersion: this.state.toastHeightsVersion + 1,
+      toastHeightsVersion: heightsChanged
+        ? this.state.toastHeightsVersion + 1
+        : this.state.toastHeightsVersion,
       isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
     };
 

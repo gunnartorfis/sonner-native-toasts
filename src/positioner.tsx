@@ -31,13 +31,20 @@ export const Positioner: React.FC<
   const { top, bottom } = useInsets();
 
   const resolvedPosition = position || 'bottom-center';
-  const containerStyle = getContainerStyle(resolvedPosition);
+  const containerStyle = React.useMemo(
+    () => getContainerStyle(resolvedPosition),
+    [resolvedPosition]
+  );
 
-  const insetValues = getInsetValues({
-    position: resolvedPosition,
-    offset,
-    safeAreaInsets: { top, bottom },
-  });
+  const insetValues = React.useMemo(
+    () =>
+      getInsetValues({
+        position: resolvedPosition,
+        offset,
+        safeAreaInsets: { top, bottom },
+      }),
+    [resolvedPosition, offset, top, bottom]
+  );
 
   const handleOutsidePress = React.useCallback(() => {
     if (isExpanded) {
@@ -45,16 +52,21 @@ export const Positioner: React.FC<
     }
   }, [isExpanded, collapse]);
 
-  const outsidePressableStyle = calculateOutsidePressableArea({
-    position: resolvedPosition,
-    toastHeights,
-    gap,
-    visibleToasts: visibleToasts || 3,
-    insetValues,
-  });
-
   // Don't show expand/collapse for center position
   const shouldAllowCollapse = resolvedPosition !== 'center' && isExpanded;
+
+  // Only rendered while expanded, so gate (rather than memoize) the
+  // computation: toast height writes in the common collapsed state would
+  // otherwise recompute it on every write for a value never used.
+  const outsidePressableStyle = shouldAllowCollapse
+    ? calculateOutsidePressableArea({
+        position: resolvedPosition,
+        toastHeights,
+        gap,
+        visibleToasts: visibleToasts || 3,
+        insetValues,
+      })
+    : null;
 
   const hasChildren = React.Children.count(children) > 0;
 

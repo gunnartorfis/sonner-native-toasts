@@ -1,59 +1,41 @@
-import { act } from 'react';
+import { act, type ReactElement } from 'react';
 import TestRenderer from 'react-test-renderer';
 import { Positioner } from '../positioner';
 import { Toaster } from '../toaster';
 import { toast } from '../toast-fns';
-import { toastStore } from '../toast-store';
 import type { ToastPosition } from '../types';
-
-const resetStore = () => {
-  toastStore['state'] = {
-    toasts: [],
-    toastsById: new Map(),
-    toastsCounter: 1,
-    toastRefs: {},
-    shouldShowOverlay: false,
-    toastTimers: {},
-    toastHeights: {},
-    toastHeightsVersion: 0,
-    isExpanded: false,
-  };
-  toastStore['config'] = {};
-  toastStore['subscribers'] = new Set();
-  toastStore['promiseResolvers'] = new Map();
-  toastStore['hideOverlayTimeout'] = null;
-  toastStore['collapseCooldown'] = false;
-  toastStore['collapseCooldownTimeout'] = null;
-};
+import { cleanupToasterRenderers, resetToastStore } from './test-utils';
 
 const textOf = (instance: TestRenderer.ReactTestRenderer): string => {
   return JSON.stringify(instance.toJSON());
 };
 
 describe('Toaster (render)', () => {
+  const renderers: TestRenderer.ReactTestRenderer[] = [];
+  const renderToaster = (element: ReactElement) => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(element);
+    });
+    renderers.push(renderer);
+    return renderer;
+  };
+
   beforeEach(() => {
-    resetStore();
+    resetToastStore();
     jest.clearAllTimers();
   });
   afterEach(() => {
-    act(() => {
-      toastStore.dismissToast(undefined);
-    });
+    cleanupToasterRenderers(renderers);
   });
 
   it('renders nothing notable when there are no toasts', () => {
-    let renderer!: TestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = TestRenderer.create(<Toaster />);
-    });
+    const renderer = renderToaster(<Toaster />);
     expect(textOf(renderer)).not.toContain('Hello world');
   });
 
   it('renders a toast title after toast() is called', () => {
-    let renderer!: TestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = TestRenderer.create(<Toaster />);
-    });
+    const renderer = renderToaster(<Toaster />);
     act(() => {
       toast('Hello world');
     });
@@ -61,10 +43,7 @@ describe('Toaster (render)', () => {
   });
 
   it('renders the description when provided', () => {
-    let renderer!: TestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = TestRenderer.create(<Toaster />);
-    });
+    const renderer = renderToaster(<Toaster />);
     act(() => {
       toast('Title here', { description: 'Some description' });
     });
@@ -97,10 +76,7 @@ describe('Toaster (render)', () => {
     };
 
     it('keeps position-less toasts in the Toaster default container when another toast uses an explicit position', () => {
-      let renderer!: TestRenderer.ReactTestRenderer;
-      act(() => {
-        renderer = TestRenderer.create(<Toaster position="bottom-center" />);
-      });
+      const renderer = renderToaster(<Toaster position="bottom-center" />);
       act(() => {
         toast('plain');
         toast('pinned', { position: 'top-center' });
@@ -118,10 +94,7 @@ describe('Toaster (render)', () => {
     });
 
     it('keeps position-less toasts in a center default container alongside an explicit bottom-center toast', () => {
-      let renderer!: TestRenderer.ReactTestRenderer;
-      act(() => {
-        renderer = TestRenderer.create(<Toaster position="center" />);
-      });
+      const renderer = renderToaster(<Toaster position="center" />);
       act(() => {
         toast('floaty');
         toast('grounded', { position: 'bottom-center' });
@@ -142,10 +115,7 @@ describe('Toaster (render)', () => {
     });
 
     it('orders a top-center container newest-first even when the Toaster default is bottom-center', () => {
-      let renderer!: TestRenderer.ReactTestRenderer;
-      act(() => {
-        renderer = TestRenderer.create(<Toaster position="bottom-center" />);
-      });
+      const renderer = renderToaster(<Toaster position="bottom-center" />);
       act(() => {
         toast('a', { position: 'top-center' });
         toast('b', { position: 'top-center' });
@@ -153,7 +123,9 @@ describe('Toaster (render)', () => {
 
       const topPositioner = findPositioner(renderer, 'top-center');
       const titlesInRenderOrder = topPositioner
-        .findAll((node) => node.props?.children === 'a' || node.props?.children === 'b')
+        .findAll(
+          (node) => node.props?.children === 'a' || node.props?.children === 'b'
+        )
         .map((node) => node.props.children);
       // top-center renders newest first (same as a top-center default Toaster)
       expect(titlesInRenderOrder).toEqual(['b', 'a']);
@@ -161,10 +133,7 @@ describe('Toaster (render)', () => {
   });
 
   it('removes the toast after dismiss', () => {
-    let renderer!: TestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = TestRenderer.create(<Toaster />);
-    });
+    const renderer = renderToaster(<Toaster />);
     let id: string | number = '';
     act(() => {
       id = toast('Dismiss me');
