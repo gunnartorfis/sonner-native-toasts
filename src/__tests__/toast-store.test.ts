@@ -2,6 +2,7 @@ import { ENTERING_ANIMATION_DURATION } from '../animations';
 import { toastStore } from '../toast-store';
 import type { ToastRef } from '../types';
 import type React from 'react';
+import { resetToastStore } from './test-utils';
 
 // Mock React createRef
 jest.mock('react', () => ({
@@ -11,21 +12,7 @@ jest.mock('react', () => ({
 
 describe('ToastStore', () => {
   beforeEach(() => {
-    // Reset the store state before each test
-    toastStore['state'] = {
-      toasts: [],
-      toastsById: new Map(),
-      toastsCounter: 1,
-      toastRefs: {},
-      shouldShowOverlay: false,
-      toastTimers: {},
-      toastHeights: {},
-      toastHeightsVersion: 0,
-      isExpanded: false,
-    };
-    toastStore['config'] = {};
-    toastStore['subscribers'] = new Set();
-    toastStore['promiseResolvers'] = new Map();
+    resetToastStore();
     jest.clearAllTimers();
   });
 
@@ -56,7 +43,11 @@ describe('ToastStore', () => {
     });
 
     it('should add a new toast with custom ID', () => {
-      const toastOptions = { id: 'custom-id', title: 'Custom Toast', variant: 'info' as const };
+      const toastOptions = {
+        id: 'custom-id',
+        title: 'Custom Toast',
+        variant: 'info' as const,
+      };
       const id = toastStore.addToast(toastOptions);
 
       const state = toastStore.getSnapshot();
@@ -68,10 +59,18 @@ describe('ToastStore', () => {
 
     it('should update existing toast when ID matches', () => {
       // Add initial toast
-      toastStore.addToast({ id: 'test-id', title: 'Original Title', variant: 'info' as const });
+      toastStore.addToast({
+        id: 'test-id',
+        title: 'Original Title',
+        variant: 'info' as const,
+      });
 
       // Update the toast
-      toastStore.addToast({ id: 'test-id', title: 'Updated Title', variant: 'info' as const });
+      toastStore.addToast({
+        id: 'test-id',
+        title: 'Updated Title',
+        variant: 'info' as const,
+      });
 
       const state = toastStore.getSnapshot();
       expect(state.toasts).toHaveLength(1);
@@ -160,7 +159,11 @@ describe('ToastStore', () => {
     });
 
     it('should start timer for regular toasts', () => {
-      const id = toastStore.addToast({ title: 'Timed Toast', duration: 2000, variant: 'info' as const });
+      const id = toastStore.addToast({
+        title: 'Timed Toast',
+        duration: 2000,
+        variant: 'info' as const,
+      });
 
       const state = toastStore.getSnapshot();
       expect(state.toastTimers[id]).toBeDefined();
@@ -189,9 +192,21 @@ describe('ToastStore', () => {
   describe('dismissToast', () => {
     beforeEach(() => {
       // Add some toasts for testing
-      toastStore.addToast({ id: 'toast-1', title: 'Toast 1', variant: 'info' as const });
-      toastStore.addToast({ id: 'toast-2', title: 'Toast 2', variant: 'info' as const });
-      toastStore.addToast({ id: 'toast-3', title: 'Toast 3', variant: 'info' as const });
+      toastStore.addToast({
+        id: 'toast-1',
+        title: 'Toast 1',
+        variant: 'info' as const,
+      });
+      toastStore.addToast({
+        id: 'toast-2',
+        title: 'Toast 2',
+        variant: 'info' as const,
+      });
+      toastStore.addToast({
+        id: 'toast-3',
+        title: 'Toast 3',
+        variant: 'info' as const,
+      });
     });
 
     it('should remove single toast by ID', () => {
@@ -257,7 +272,11 @@ describe('ToastStore', () => {
 
   describe('timer management', () => {
     it('should pause timer', () => {
-      const id = toastStore.addToast({ title: 'Test Toast', duration: 2000, variant: 'info' as const });
+      const id = toastStore.addToast({
+        title: 'Test Toast',
+        duration: 2000,
+        variant: 'info' as const,
+      });
 
       toastStore.pauseTimer(id);
 
@@ -266,7 +285,11 @@ describe('ToastStore', () => {
     });
 
     it('should resume timer', () => {
-      const id = toastStore.addToast({ title: 'Test Toast', duration: 2000, variant: 'info' as const });
+      const id = toastStore.addToast({
+        title: 'Test Toast',
+        duration: 2000,
+        variant: 'info' as const,
+      });
 
       toastStore.pauseTimer(id);
       toastStore.resumeTimer(id);
@@ -276,8 +299,16 @@ describe('ToastStore', () => {
     });
 
     it('should pause all timers', () => {
-      const id1 = toastStore.addToast({ title: 'Toast 1', duration: 2000, variant: 'info' as const });
-      const id2 = toastStore.addToast({ title: 'Toast 2', duration: 3000, variant: 'info' as const });
+      const id1 = toastStore.addToast({
+        title: 'Toast 1',
+        duration: 2000,
+        variant: 'info' as const,
+      });
+      const id2 = toastStore.addToast({
+        title: 'Toast 2',
+        duration: 3000,
+        variant: 'info' as const,
+      });
 
       toastStore.pauseAllTimers();
 
@@ -289,8 +320,16 @@ describe('ToastStore', () => {
     it('should resume all timers', () => {
       // This test is difficult with fake timers due to setTimeout mocking
       // Instead, just verify the isPaused flag changes correctly
-      const id1 = toastStore.addToast({ title: 'Toast 1', duration: 2000, variant: 'info' as const });
-      const id2 = toastStore.addToast({ title: 'Toast 2', duration: 3000, variant: 'info' as const });
+      const id1 = toastStore.addToast({
+        title: 'Toast 1',
+        duration: 2000,
+        variant: 'info' as const,
+      });
+      const id2 = toastStore.addToast({
+        title: 'Toast 2',
+        duration: 3000,
+        variant: 'info' as const,
+      });
 
       toastStore.pauseAllTimers();
 
@@ -312,9 +351,19 @@ describe('ToastStore', () => {
     });
 
     it('clears the running timer when a toast is updated to duration: Infinity', () => {
-      const id = toastStore.addToast({ id: 'pin-me', title: 'Uploading', duration: 5000, variant: 'info' as const });
+      const id = toastStore.addToast({
+        id: 'pin-me',
+        title: 'Uploading',
+        duration: 5000,
+        variant: 'info' as const,
+      });
 
-      toastStore.addToast({ id: 'pin-me', title: 'Uploading', duration: Infinity, variant: 'info' as const });
+      toastStore.addToast({
+        id: 'pin-me',
+        title: 'Uploading',
+        duration: Infinity,
+        variant: 'info' as const,
+      });
 
       jest.advanceTimersByTime(60000);
 
@@ -324,9 +373,19 @@ describe('ToastStore', () => {
     });
 
     it('still auto-dismisses when updated from Infinity to a finite duration', () => {
-      const id = toastStore.addToast({ id: 'unpin-me', title: 'Pinned', duration: Infinity, variant: 'info' as const });
+      const id = toastStore.addToast({
+        id: 'unpin-me',
+        title: 'Pinned',
+        duration: Infinity,
+        variant: 'info' as const,
+      });
 
-      toastStore.addToast({ id: 'unpin-me', title: 'Pinned', duration: 2000, variant: 'info' as const });
+      toastStore.addToast({
+        id: 'unpin-me',
+        title: 'Pinned',
+        duration: 2000,
+        variant: 'info' as const,
+      });
 
       jest.advanceTimersByTime(ENTERING_ANIMATION_DURATION + 2000 + 1);
 
@@ -335,7 +394,11 @@ describe('ToastStore', () => {
     });
 
     it('should enforce minimum 1 second when resuming timer', () => {
-      const id = toastStore.addToast({ title: 'Test Toast', duration: 100, variant: 'info' as const }); // Very short duration
+      const id = toastStore.addToast({
+        title: 'Test Toast',
+        duration: 100,
+        variant: 'info' as const,
+      }); // Very short duration
 
       // Pause timer almost immediately
       toastStore.pauseTimer(id);
@@ -370,8 +433,16 @@ describe('ToastStore', () => {
     });
 
     it('should track heights for multiple toasts', () => {
-      toastStore.addToast({ id: 'toast-1', title: 'Toast 1', variant: 'info' as const });
-      toastStore.addToast({ id: 'toast-2', title: 'Toast 2', variant: 'info' as const });
+      toastStore.addToast({
+        id: 'toast-1',
+        title: 'Toast 1',
+        variant: 'info' as const,
+      });
+      toastStore.addToast({
+        id: 'toast-2',
+        title: 'Toast 2',
+        variant: 'info' as const,
+      });
 
       toastStore.setToastHeight('toast-1', 60);
       toastStore.setToastHeight('toast-2', 70);
@@ -385,8 +456,16 @@ describe('ToastStore', () => {
   describe('expand/collapse functionality', () => {
     beforeEach(() => {
       // Add multiple toasts with short durations for faster tests
-      toastStore.addToast({ title: 'Toast 1', duration: 100, variant: 'info' as const });
-      toastStore.addToast({ title: 'Toast 2', duration: 100, variant: 'info' as const });
+      toastStore.addToast({
+        title: 'Toast 1',
+        duration: 100,
+        variant: 'info' as const,
+      });
+      toastStore.addToast({
+        title: 'Toast 2',
+        duration: 100,
+        variant: 'info' as const,
+      });
     });
 
     it('should expand and pause all timers', () => {
@@ -448,9 +527,14 @@ describe('ToastStore', () => {
   describe('wiggle functionality', () => {
     it('should call wiggle on toast ref when available', () => {
       const mockWiggle = jest.fn();
-      const mockRef: React.RefObject<ToastRef | null> = { current: { wiggle: mockWiggle } };
+      const mockRef: React.RefObject<ToastRef | null> = {
+        current: { wiggle: mockWiggle },
+      };
 
-      const id = toastStore.addToast({ title: 'Test Toast', variant: 'info' as const });
+      const id = toastStore.addToast({
+        title: 'Test Toast',
+        variant: 'info' as const,
+      });
 
       // Manually set the ref (normally done by React)
       toastStore['state'].toastRefs[id] = mockRef;
@@ -461,7 +545,10 @@ describe('ToastStore', () => {
     });
 
     it('should not crash when toast ref is not available', () => {
-      const id = toastStore.addToast({ title: 'Test Toast', variant: 'info' as const });
+      const id = toastStore.addToast({
+        title: 'Test Toast',
+        variant: 'info' as const,
+      });
 
       expect(() => {
         toastStore.wiggleToast(id);
@@ -475,7 +562,11 @@ describe('ToastStore', () => {
     });
 
     it('should restart timer on wiggle for finite duration toasts', () => {
-      const id = toastStore.addToast({ title: 'Test Toast', duration: 2000, variant: 'info' as const });
+      const id = toastStore.addToast({
+        title: 'Test Toast',
+        duration: 2000,
+        variant: 'info' as const,
+      });
       const initialTimer = toastStore.getSnapshot().toastTimers[id];
 
       // Wait a bit to change the timer state
@@ -489,7 +580,11 @@ describe('ToastStore', () => {
     });
 
     it('should not restart timer on wiggle for infinite duration toasts', () => {
-      toastStore.addToast({ title: 'Test Toast', duration: Infinity, variant: 'info' as const });
+      toastStore.addToast({
+        title: 'Test Toast',
+        duration: Infinity,
+        variant: 'info' as const,
+      });
 
       toastStore.wiggleToast(1); // Use the generated ID
 
@@ -605,8 +700,16 @@ describe('ToastStore', () => {
     it('overflow trim frees the trimmed toast ref', () => {
       toastStore.setConfig({ visibleToasts: 1 });
 
-      toastStore.addToast({ id: 'first', title: 'first', variant: 'info' as const });
-      toastStore.addToast({ id: 'second', title: 'second', variant: 'info' as const });
+      toastStore.addToast({
+        id: 'first',
+        title: 'first',
+        variant: 'info' as const,
+      });
+      toastStore.addToast({
+        id: 'second',
+        title: 'second',
+        variant: 'info' as const,
+      });
 
       expect(toastStore.getSnapshot().toastRefs['first']).toBeUndefined();
       expect(toastStore.getSnapshot().toastRefs['second']).toBeDefined();

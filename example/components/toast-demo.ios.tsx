@@ -60,9 +60,7 @@ const ToastDemo: React.FC = () => {
           >
             <SwiftUIText modifiers={[tag('top-center')]}>Top</SwiftUIText>
             <SwiftUIText modifiers={[tag('center')]}>Center</SwiftUIText>
-            <SwiftUIText modifiers={[tag('bottom-center')]}>
-              Bottom
-            </SwiftUIText>
+            <SwiftUIText modifiers={[tag('bottom-center')]}>Bottom</SwiftUIText>
           </Picker>
           <Picker
             label="Theme"
@@ -77,9 +75,7 @@ const ToastDemo: React.FC = () => {
           <Picker
             label="Swipe Direction"
             selection={swipeDirection}
-            onSelectionChange={(v) =>
-              setParam('swipeDirection', v as string)
-            }
+            onSelectionChange={(v) => setParam('swipeDirection', v as string)}
             modifiers={[pickerStyle('menu')]}
           >
             <SwiftUIText modifiers={[tag('up')]}>Up</SwiftUIText>
@@ -100,9 +96,7 @@ const ToastDemo: React.FC = () => {
           <Picker
             label="Visible Toasts"
             selection={String(visibleToasts)}
-            onSelectionChange={(v) =>
-              setParam('visibleToasts', v as string)
-            }
+            onSelectionChange={(v) => setParam('visibleToasts', v as string)}
             modifiers={[pickerStyle('menu')]}
           >
             {['1', '2', '3', '4', '5'].map((n) => (
@@ -188,10 +182,7 @@ const ToastDemo: React.FC = () => {
             label="Show basic toast"
           />
           <SwiftUIButton
-            modifiers={[
-              buttonStyle('bordered'),
-              disabledModifier(!toastId),
-            ]}
+            modifiers={[buttonStyle('bordered'), disabledModifier(!toastId)]}
             onPress={() => {
               toast.dismiss(toastId!);
               setToastId(null);
@@ -366,8 +357,7 @@ const ToastDemo: React.FC = () => {
                 toast.info('Second toast with longer text', {
                   position: 'bottom-center',
                   duration: 10000,
-                  description:
-                    'This toast has a description to make it taller',
+                  description: 'This toast has a description to make it taller',
                 });
               }, 500);
               setTimeout(() => {
@@ -464,10 +454,7 @@ const ToastDemo: React.FC = () => {
             onPress={() => {
               toast.promise(
                 new Promise<string>((_, reject) => {
-                  setTimeout(
-                    () => reject(new Error('promise failed')),
-                    2000
-                  );
+                  setTimeout(() => reject(new Error('promise failed')), 2000);
                 }),
                 {
                   loading: 'Loading...',

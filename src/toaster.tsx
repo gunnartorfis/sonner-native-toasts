@@ -30,6 +30,31 @@ function areArrayItemsIdentical<T>(a: readonly T[], b: readonly T[]): boolean {
   return a.length === b.length && a.every((item, i) => item === b[i]);
 }
 
+// Every PositionData field needs a comparator here: adding a field without
+// deciding how it participates in cache-entry reuse is a type error, so a new
+// field can never be silently served stale from positionsCache.
+const positionDataComparators: {
+  [K in keyof PositionData]: (
+    a: PositionData[K],
+    b: PositionData[K]
+  ) => boolean;
+} = {
+  position: (a, b) => a === b,
+  toasts: areArrayItemsIdentical,
+  orderedToastIds: areArrayItemsIdentical,
+};
+
+function arePositionEntriesEqual(a: PositionData, b: PositionData): boolean {
+  return (
+    Object.keys(positionDataComparators) as Array<keyof PositionData>
+  ).every((key) =>
+    (positionDataComparators[key] as (x: unknown, y: unknown) => boolean)(
+      a[key],
+      b[key]
+    )
+  );
+}
+
 function orderToastsFromPosition(
   currentToasts: ToastProps[],
   position: ToastPosition
@@ -49,9 +74,21 @@ export const Toaster: React.FC<ToasterProps> = ({
     toastStore.getSnapshot
   );
 
-  const { toasts, shouldShowOverlay, toastHeights, isExpanded, toastHeightsVersion } = storeState;
+  const {
+    toasts,
+    shouldShowOverlay,
+    toastHeights,
+    isExpanded,
+    toastHeightsVersion,
+  } = storeState;
 
-  const uiProps = { ...toasterProps, toasts, toastHeights, isExpanded, toastHeightsVersion };
+  const uiProps = {
+    ...toasterProps,
+    toasts,
+    toastHeights,
+    isExpanded,
+    toastHeightsVersion,
+  };
 
   if (!shouldShowOverlay) {
     return <ToasterUI {...uiProps} />;
@@ -108,7 +145,10 @@ const ToasterUI: React.FC<
   animation,
   ToastWrapper,
   positionerStyle,
-  ...props
+  unstyled,
+  style,
+  styles,
+  backgroundComponent,
 }) => {
   React.useEffect(() => {
     toastStore.setConfig({
@@ -210,6 +250,9 @@ const ToasterUI: React.FC<
         currentPosition
       );
       if (toastsForPosition.length === 0 && position !== currentPosition) {
+        // Drop the cached entry so its ToastProps (jsx, closures) don't
+        // outlive the dismissed toasts.
+        positionsCache.delete(currentPosition);
         continue;
       }
       const orderedToastIds = getOrderedToastIds(
@@ -217,17 +260,20 @@ const ToasterUI: React.FC<
         currentPosition,
         enableStacking
       );
-      // Read-then-overwrite per key, never clear: an interrupted render
-      // leaves every entry either previous or freshly computed — both
-      // valid baselines for the next render's identity comparison. The
-      // map is bounded by allPositions (3 entries).
+      // Read-then-overwrite per key: an interrupted render leaves every
+      // entry either previous or freshly computed — both valid baselines
+      // for the next render's identity comparison. The map is bounded by
+      // allPositions (3 entries) and pruned when a position empties.
       const previousEntry = positionsCache.get(currentPosition);
+      const nextEntry: PositionData = {
+        position: currentPosition,
+        toasts: toastsForPosition,
+        orderedToastIds,
+      };
       const entry =
-        previousEntry &&
-        areArrayItemsIdentical(previousEntry.toasts, toastsForPosition) &&
-        areArrayItemsIdentical(previousEntry.orderedToastIds, orderedToastIds)
+        previousEntry && arePositionEntriesEqual(previousEntry, nextEntry)
           ? previousEntry
-          : { position: currentPosition, toasts: toastsForPosition, orderedToastIds };
+          : nextEntry;
       positionsCache.set(currentPosition, entry);
       data.push(entry);
     }
@@ -237,47 +283,56 @@ const ToasterUI: React.FC<
   return (
     <ToastContext.Provider value={value}>
       <DynamicToastContext.Provider value={dynamicValue}>
-      {positionsData.map(({ position: currentPosition, toasts: toastsForPosition, orderedToastIds }) => {
-        return (
-        <Positioner
-          key={currentPosition}
-          style={positionerStyle}
-          position={currentPosition}
-        >
-          {toastsForPosition
-            .map((toastToRender, index) => {
-              const ToastToRender = (
-                <Toast
-                  key={toastToRender.id}
-                  {...props}
-                  {...toastToRender}
-                  parentStyle={props.style}
-                  parentStyles={props.styles}
-                  onDismiss={onDismiss}
-                  onAutoClose={onAutoClose}
-                  index={index}
-                  ref={toastStore.getToastRef(toastToRender.id)}
-                  numberOfToasts={toastsForPosition.length}
-                  orderedToastIds={orderedToastIds}
-                />
-              );
+        {positionsData.map(
+          ({
+            position: currentPosition,
+            toasts: toastsForPosition,
+            orderedToastIds,
+          }) => {
+            return (
+              <Positioner
+                key={currentPosition}
+                style={positionerStyle}
+                position={currentPosition}
+              >
+                {toastsForPosition.map((toastToRender, index) => {
+                  // Toast is React.memo'd on shallow prop identity — pass only
+                  // the props it consumes, explicitly, so nothing object-valued
+                  // slips in through a rest-spread and silently defeats memo.
+                  const ToastToRender = (
+                    <Toast
+                      key={toastToRender.id}
+                      unstyled={unstyled}
+                      backgroundComponent={backgroundComponent}
+                      {...toastToRender}
+                      parentStyle={style}
+                      parentStyles={styles}
+                      onDismiss={onDismiss}
+                      onAutoClose={onAutoClose}
+                      index={index}
+                      ref={toastStore.getToastRef(toastToRender.id)}
+                      numberOfToasts={toastsForPosition.length}
+                      orderedToastIds={orderedToastIds}
+                    />
+                  );
 
-              if (ToastWrapper) {
-                return (
-                  <ToastWrapper
-                    key={toastToRender.id}
-                    toastId={toastToRender.id}
-                  >
-                    {ToastToRender}
-                  </ToastWrapper>
-                );
-              }
-              return ToastToRender;
-            })}
-        </Positioner>
-        );
-      })}
-    </DynamicToastContext.Provider>
+                  if (ToastWrapper) {
+                    return (
+                      <ToastWrapper
+                        key={toastToRender.id}
+                        toastId={toastToRender.id}
+                      >
+                        {ToastToRender}
+                      </ToastWrapper>
+                    );
+                  }
+                  return ToastToRender;
+                })}
+              </Positioner>
+            );
+          }
+        )}
+      </DynamicToastContext.Provider>
     </ToastContext.Provider>
   );
 };

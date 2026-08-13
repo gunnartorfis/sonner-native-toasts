@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, type ViewProps } from 'react-native';
+import { Pressable, Text, type ViewProps } from 'react-native';
 import { X } from './icons';
 import type { ToastProps } from './types';
 import type { DefaultStyles } from './use-default-styles';
@@ -28,7 +28,13 @@ export const CloseButton: React.FC<{
   }
 
   if (close) {
-    return close;
+    // `close` typechecks as a bare string/number, which crashes React Native
+    // when rendered directly inside a View.
+    return typeof close === 'string' || typeof close === 'number' ? (
+      <Text>{close}</Text>
+    ) : (
+      close
+    );
   }
 
   if (closeButton) {
