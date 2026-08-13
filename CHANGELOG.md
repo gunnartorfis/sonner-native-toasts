@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.26.5](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.4...v0.26.5) (2026-08-13)
+
+
+### Bug Fixes
+
+* address PR review findings on toast memoization ([fce1d13](https://github.com/gunnartorfis/sonner-native-toasts/commit/fce1d137f0dc33753732e1178b7154557f0ff850))
+* cancel running timer when a toast updates to infinite duration ([39902d5](https://github.com/gunnartorfis/sonner-native-toasts/commit/39902d5aeba69bbdff9dc1100dda2e44302c3985))
+* place default-position toasts in the configured container ([1c53bd4](https://github.com/gunnartorfis/sonner-native-toasts/commit/1c53bd4a2f0abcf45fa456efa0e197e93fcf1bce))
+
+
+### Performance Improvements
+
+* make positions cache interruption-safe; verify identity unconditionally ([d31f4e0](https://github.com/gunnartorfis/sonner-native-toasts/commit/d31f4e0049de9c0d6d2e4007cba9b2153b54ade3))
+* memoize Toast and stabilize per-position props ([b12d6bd](https://github.com/gunnartorfis/sonner-native-toasts/commit/b12d6bdea52de6058f7e45f644900a7189e76802))
+
 ## [0.26.4](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.3...v0.26.4) (2026-06-29)
 
 
