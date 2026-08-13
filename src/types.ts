@@ -66,6 +66,8 @@ export type ToastAction = {
 
 export type ToastProps = StyleProps & {
   id: string | number;
+  /** Channel: which <Toaster id="..."> renders this toast. */
+  toasterId?: string;
   index: number;
   title: string;
   variant: ToastVariant;
@@ -126,6 +128,19 @@ type ExternalToast = Omit<
 };
 
 export type ToasterProps = Omit<StyleProps, 'style'> & {
+  /**
+   * Channel name. A named Toaster renders only toasts sent to it via
+   * `toast(…, { toasterId })`; an unnamed one renders only toasts with no
+   * `toasterId`.
+   */
+  id?: string;
+  /**
+   * iOS only. When false, the Toaster is not wrapped in `FullWindowOverlay`.
+   * Needed for a Toaster rendered inside a natively presented view (e.g. a
+   * sheet), which is presented above the app window the overlay lives in.
+   * @default true
+   */
+  fullWindowOverlay?: boolean;
   duration?: number;
   theme?: ToastTheme;
   // richColors?: boolean; (false)

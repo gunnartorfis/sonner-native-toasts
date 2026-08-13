@@ -11,16 +11,19 @@ export const resetToastStore = () => {
     toastsById: new Map(),
     toastsCounter: 1,
     toastRefs: {},
-    shouldShowOverlay: false,
+    shouldShowOverlay: {},
     toastTimers: {},
     toastHeights: {},
     toastHeightsVersion: 0,
-    isExpanded: false,
+    isExpanded: {},
   };
-  toastStore['config'] = {};
+  toastStore['configByChannel'] = {};
   toastStore['subscribers'] = new Set();
   toastStore['promiseResolvers'] = new Map();
-  toastStore['hideOverlayTimeout'] = null;
+  toastStore['hideOverlayTimeouts'] = {};
+  toastStore['mountedByChannel'] = {};
+  toastStore['clearChannelTimeouts'] = {};
+  toastStore['warnedUnmountedChannels'] = new Set();
   toastStore['collapseCooldown'] = false;
   toastStore['collapseCooldownTimeout'] = null;
 };

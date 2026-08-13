@@ -13,7 +13,7 @@ import {
   type ToastPosition,
   type ToastProps,
 } from './types';
-import { toastStore } from './toast-store';
+import { DEFAULT_CHANNEL, toastStore } from './toast-store';
 const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
 const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
@@ -66,6 +66,8 @@ function orderToastsFromPosition(
 
 export const Toaster: React.FC<ToasterProps> = ({
   ToasterOverlayWrapper,
+  id,
+  fullWindowOverlay = true,
   ...toasterProps
 }) => {
   const storeState = React.useSyncExternalStore(
@@ -74,16 +76,25 @@ export const Toaster: React.FC<ToasterProps> = ({
     toastStore.getSnapshot
   );
 
-  const {
-    toasts,
-    shouldShowOverlay,
-    toastHeights,
-    isExpanded,
-    toastHeightsVersion,
-  } = storeState;
+  const { toasts: allToasts, toastHeights, toastHeightsVersion } = storeState;
+
+  const channel = id ?? DEFAULT_CHANNEL;
+  const shouldShowOverlay = toastStore.shouldShowOverlayFor(channel);
+  const isExpanded = toastStore.isChannelExpanded(channel);
+
+  // Channel routing, exactly web Sonner's rule: a named Toaster renders only
+  // toasts addressed to it; an unnamed one renders only unaddressed toasts.
+  const toasts = React.useMemo(
+    () =>
+      allToasts.filter(
+        (toast) => (toast.toasterId ?? DEFAULT_CHANNEL) === channel
+      ),
+    [allToasts, channel]
+  );
 
   const uiProps = {
     ...toasterProps,
+    channel,
     toasts,
     toastHeights,
     isExpanded,
@@ -102,7 +113,7 @@ export const Toaster: React.FC<ToasterProps> = ({
     );
   }
 
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === 'ios' && fullWindowOverlay) {
     return (
       <FullWindowOverlay>
         <ToasterUI {...uiProps} />
@@ -115,12 +126,14 @@ export const Toaster: React.FC<ToasterProps> = ({
 
 const ToasterUI: React.FC<
   ToasterProps & {
+    channel: string;
     toasts: ToastProps[];
     toastHeights: Record<string | number, number>;
     isExpanded: boolean;
     toastHeightsVersion: number;
   }
 > = ({
+  channel,
   toasts,
   toastHeights,
   isExpanded,
@@ -150,14 +163,31 @@ const ToasterUI: React.FC<
   styles,
   backgroundComponent,
 }) => {
+  // Channel lifetime: drops a named channel's toasts when its last Toaster
+  // unmounts (see ToastStore.registerChannel).
+  React.useEffect(() => toastStore.registerChannel(channel), [channel]);
+
   React.useEffect(() => {
-    toastStore.setConfig({
-      autoWiggleOnUpdate,
-      visibleToasts,
-      duration,
-      pauseWhenPageIsHidden,
-    });
-  }, [autoWiggleOnUpdate, visibleToasts, duration, pauseWhenPageIsHidden]);
+    toastStore.setConfig(
+      {
+        autoWiggleOnUpdate,
+        visibleToasts,
+        duration,
+        pauseWhenPageIsHidden,
+      },
+      channel
+    );
+  }, [
+    channel,
+    autoWiggleOnUpdate,
+    visibleToasts,
+    duration,
+    pauseWhenPageIsHidden,
+  ]);
+
+  const addToastInChannel = React.useCallback<
+    StableToastContextType['addToast']
+  >((data) => toastStore.addToast({ toasterId: channel || undefined, ...data }), [channel]);
 
   const value: StableToastContextType = React.useMemo(
     () => ({
@@ -168,7 +198,7 @@ const ToasterUI: React.FC<
         swipeToDismissDirection ?? toastDefaultValues.swipeToDismissDirection,
       closeButton: closeButton ?? toastDefaultValues.closeButton,
       unstyled: toastOptions.unstyled ?? toastDefaultValues.unstyled,
-      addToast: toastStore.addToast,
+      addToast: addToastInChannel,
       invert: invert ?? toastDefaultValues.invert,
       allowFontScaling: allowFontScaling ?? toastDefaultValues.allowFontScaling,
       maxFontSizeMultiplier,
@@ -186,6 +216,7 @@ const ToasterUI: React.FC<
       animation: animation ?? EMPTY_ANIMATION,
     }),
     [
+      addToastInChannel,
       duration,
       position,
       offset,
@@ -212,11 +243,11 @@ const ToasterUI: React.FC<
       toastHeights,
       toastHeightsVersion,
       isExpanded,
-      expand: toastStore.expand,
-      collapse: toastStore.collapse,
-      toggleExpand: toastStore.toggleExpand,
+      expand: () => toastStore.expand(channel),
+      collapse: () => toastStore.collapse(channel),
+      toggleExpand: () => toastStore.toggleExpand(channel),
     }),
-    [toastHeights, toastHeightsVersion, isExpanded]
+    [channel, toastHeights, toastHeightsVersion, isExpanded]
   );
   const onDismiss = React.useCallback<
     NonNullable<React.ComponentProps<typeof Toast>['onDismiss']>

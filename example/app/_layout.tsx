@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, Text, useColorScheme } from 'react-native';
+import { Pressable, Text, View, useColorScheme } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -34,20 +34,36 @@ const RootLayout: React.FC = () => {
             options={{
               title: 'Toasts',
               headerRight: () => (
-                <Pressable
-                  onPress={() => router.push('/modal')}
-                  hitSlop={8}
-                >
-                  <Text
-                    style={{
-                      color:
-                        colorScheme === 'dark' ? '#0A84FF' : '#007AFF',
-                      fontSize: 17,
-                    }}
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  <Pressable
+                    onPress={() => router.push('/multiple-toasters')}
+                    hitSlop={8}
                   >
-                    Modal
-                  </Text>
-                </Pressable>
+                    <Text
+                      style={{
+                        color:
+                          colorScheme === 'dark' ? '#0A84FF' : '#007AFF',
+                        fontSize: 17,
+                      }}
+                    >
+                      Channels
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => router.push('/modal')}
+                    hitSlop={8}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          colorScheme === 'dark' ? '#0A84FF' : '#007AFF',
+                        fontSize: 17,
+                      }}
+                    >
+                      Modal
+                    </Text>
+                  </Pressable>
+                </View>
               ),
             }}
           />
@@ -62,6 +78,10 @@ const RootLayout: React.FC = () => {
               headerShown: true,
               title: 'Modal',
             }}
+          />
+          <Stack.Screen
+            name="multiple-toasters"
+            options={{ title: 'Multiple toasters' }}
           />
         </Stack>
         <Toaster
