@@ -17,8 +17,8 @@
 | onDismiss          | ✅            | ✅         |
 | onAutoClose        | ✅            | ✅         |
 | unstyled           | ✅            | ✅         |
-| actionButtonStyles | ✅            | ✅         |
-| cancelButtonStyles | ✅            | ✅         |
+| actionButtonStyle  | ✅            | ✅         |
+| cancelButtonStyle  | ✅            | ✅         |
 | cancel             | ✅            | ✅         |
 | action as JSX      | ✅            | ✅         |
 | loading            | ✅            | ✅         |
