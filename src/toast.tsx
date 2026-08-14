@@ -121,6 +121,11 @@ const ToastComponent = React.forwardRef<ToastRef, ToastInternalProps>(
     );
 
     const stackGap = gap ?? toastDefaultValues.stackGap;
+    // TEMP DEBUG (revert before merge)
+    console.log(
+      `[sonner-debug] Toast render id=${id} isExpanded=${isExpanded} ` +
+        `heights=${JSON.stringify(toastHeights)} ordered=${orderedToastIds.join(',')}`
+    );
     const yPosition = useToastPosition({
       id,
       index,
