@@ -110,6 +110,30 @@ class ToastStore {
   private configFor = (channel: string): ToastStoreConfig =>
     this.configByChannel[channel] ?? {};
 
+  // Web-Sonner parity: a toast addressed to a NAMED channel with no mounted
+  // Toaster waits — its auto-close timer starts when the channel mounts, so
+  // it can't silently expire before it was ever visible. The default channel
+  // keeps main's behavior (timers always run) for back-compat.
+  private isChannelLive = (channel: string): boolean =>
+    channel === DEFAULT_CHANNEL || (this.mountedByChannel[channel] ?? 0) > 0;
+
+  private startAutoClose = (
+    id: string | number,
+    duration: number,
+    channel: string
+  ) => {
+    if (!this.isChannelLive(channel)) {
+      return;
+    }
+    this.startTimer({
+      id,
+      duration,
+      onComplete: () => {
+        this.dismissToast(id, 'onAutoClose');
+      },
+    });
+  };
+
   // Channel state is stored sparsely (a channel appears only once it has been
   // used), so always read it through these — never index the record directly.
   // Store-internal/imperative use only; render code reads the snapshot via
@@ -140,6 +164,25 @@ class ToastStore {
     // The channel is live again, so a future orphaned toast is worth warning
     // about afresh.
     this.warnedUnmountedChannels.delete(channel);
+
+    // The channel just came alive: start the auto-close timers its waiting
+    // toasts deferred. Only toasts WITHOUT a timer entry — restarting live
+    // (possibly paused) timers on a StrictMode remount would reset durations.
+    if (mounted === 1 && channel !== DEFAULT_CHANNEL) {
+      for (const toast of this.state.toastsById.values()) {
+        if (channelOf(toast) !== channel) continue;
+        if (toast.promiseOptions || toast.id in this.state.toastTimers) {
+          continue;
+        }
+        this.startAutoClose(
+          toast.id,
+          toast.duration ??
+            this.configFor(channel).duration ??
+            toastDefaultValues.duration,
+          channel
+        );
+      }
+    }
 
     if (__DEV__ && channel !== DEFAULT_CHANNEL && mounted > 1) {
       console.warn(
@@ -496,13 +539,7 @@ class ToastStore {
 
       // Restart the auto-dismiss timer on every non-promise update
       if (!newToast.promiseOptions) {
-        this.startTimer({
-          id,
-          duration,
-          onComplete: () => {
-            this.dismissToast(id, 'onAutoClose');
-          },
-        });
+        this.startAutoClose(id, duration, channel);
       }
 
       const updatedIndex = this.cloneIndex();
@@ -566,13 +603,7 @@ class ToastStore {
         this.handlePromise(newToast);
       } else {
         // Start timer for regular toasts
-        this.startTimer({
-          id,
-          duration,
-          onComplete: () => {
-            this.dismissToast(id, 'onAutoClose');
-          },
-        });
+        this.startAutoClose(id, duration, channel);
       }
     }
 
@@ -723,16 +754,13 @@ class ToastStore {
 
     // Reset timer on wiggle (but not for Infinity duration or promise toasts)
     if (toast.duration !== Infinity && !toast.promiseOptions) {
-      this.startTimer({
+      this.startAutoClose(
         id,
-        duration:
-          toast.duration ??
+        toast.duration ??
           this.configFor(channelOf(toast)).duration ??
           toastDefaultValues.duration,
-        onComplete: () => {
-          this.dismissToast(id, 'onAutoClose');
-        },
-      });
+        channelOf(toast)
+      );
     }
   };
 

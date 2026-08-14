@@ -68,9 +68,9 @@ const MultipleToastersScreen: React.FC = () => {
 
         <Row label="Root toast" onPress={() => toast('Root toast')} />
         <Row
-          label="Sheet toast (while the sheet is closed)"
+          label="Sheet toast while closed (waits for the sheet to open)"
           onPress={() =>
-            toast('You will not see this until the sheet opens', {
+            toast('I waited for the sheet to open', {
               toasterId: SHEET_CHANNEL,
             })
           }

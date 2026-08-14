@@ -157,6 +157,96 @@ describe('channel lifetime', () => {
     expect('sheet' in snapshot.isExpanded).toBe(false);
   });
 
+  describe('toasts sent before the channel mounts (web-Sonner parity)', () => {
+    it('does not tick the auto-close timer while the channel is unmounted', () => {
+      act(() => {
+        toast('waiting', { toasterId: 'sheet', duration: 4000 });
+      });
+
+      expect(Object.keys(toastStore.getSnapshot().toastTimers)).toHaveLength(0);
+
+      // Way past the duration: the toast must still be waiting.
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+      expect(titlesIn('sheet')).toEqual(['waiting']);
+    });
+
+    it('starts the timer when the channel mounts, then auto-closes', () => {
+      const onAutoClose = jest.fn();
+      act(() => {
+        toast('waiting', { toasterId: 'sheet', duration: 4000, onAutoClose });
+      });
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      render(<Toaster id="sheet" />);
+      expect(titlesIn('sheet')).toEqual(['waiting']);
+
+      act(() => {
+        jest.advanceTimersByTime(10_000);
+      });
+      expect(titlesIn('sheet')).toEqual([]);
+      expect(onAutoClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps main’s behavior for the default channel: timers always run', () => {
+      const onAutoClose = jest.fn();
+      act(() => {
+        toast('root', { duration: 4000, onAutoClose });
+      });
+      act(() => {
+        jest.advanceTimersByTime(10_000);
+      });
+      expect(titlesIn()).toEqual([]);
+      expect(onAutoClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not reset running timers when a second Toaster mounts the channel', () => {
+      render(<Toaster id="sheet" />);
+      act(() => {
+        toast('live', { toasterId: 'sheet', duration: 4000 });
+      });
+      const before =
+        toastStore.getSnapshot().toastTimers[
+          toastStore.getSnapshot().toasts[0]!.id
+        ];
+
+      const second = render(<Toaster id="sheet" />);
+      const after =
+        toastStore.getSnapshot().toastTimers[
+          toastStore.getSnapshot().toasts[0]!.id
+        ];
+      expect(after).toBe(before);
+      act(() => {
+        second.unmount();
+      });
+    });
+
+    it('a promise toast resolved while unmounted waits, then auto-closes on mount', async () => {
+      act(() => {
+        toast.promise(Promise.resolve('ok'), {
+          loading: 'loading',
+          success: () => 'resolved',
+          error: 'failed',
+          toasterId: 'sheet',
+        });
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(titlesIn('sheet')).toEqual(['resolved']);
+      expect(Object.keys(toastStore.getSnapshot().toastTimers)).toHaveLength(0);
+
+      render(<Toaster id="sheet" />);
+      act(() => {
+        jest.advanceTimersByTime(10_000);
+      });
+      expect(titlesIn('sheet')).toEqual([]);
+    });
+  });
+
   it('does not apply an unmounted default Toaster’s config to later toasts', () => {
     const root = render(<Toaster visibleToasts={1} />);
     act(() => {

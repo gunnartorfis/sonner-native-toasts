@@ -105,6 +105,9 @@ for toasts removed this way, since nothing dismissed them.
 The unnamed root Toaster behaves as before: unmounting it (during navigation, for
 example) leaves its toasts in place.
 
-Sending a toast to an `id` that has no mounted Toaster renders nothing. In
-development you'll get a warning naming the channel, which is usually a typo in
-`toasterId`.
+Sending a toast to an `id` that has no mounted Toaster renders nothing yet —
+the toast waits in the store with its auto-close timer **paused**, and appears
+(timer started) once a Toaster for that channel mounts. So firing a toast just
+before opening a sheet works regardless of timing. In development you'll also
+get a warning naming the channel, since an unmounted channel is usually a typo
+in `toasterId`.
