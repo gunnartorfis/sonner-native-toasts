@@ -14,6 +14,7 @@ import {
   type ToastProps,
 } from './types';
 import { channelOf, DEFAULT_CHANNEL, toastStore } from './toast-store';
+import { sonnerDebug } from './debug';
 const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
 const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
@@ -81,6 +82,8 @@ export const Toaster: React.FC<ToasterProps> = ({
   const channel = id ?? DEFAULT_CHANNEL;
   const shouldShowOverlay = toastStore.shouldShowOverlayFor(channel);
   const isExpanded = toastStore.isChannelExpanded(channel);
+  // TEMP DEBUG (revert before merge)
+  sonnerDebug(`Toaster render channel="${channel}" isExpanded=${isExpanded}`);
 
   // Channel lifetime lives HERE, not in ToasterUI: ToasterUI's position in
   // the tree changes when the overlay wrapper mounts/unmounts, so an effect
