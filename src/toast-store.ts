@@ -737,6 +737,8 @@ class ToastStore {
   };
 
   expand = (channel = DEFAULT_CHANNEL) => {
+    // TEMP DEBUG (revert before merge)
+    console.warn(`[sonner-debug] store.expand channel="${channel}"`);
     this.state = {
       ...this.state,
       isExpanded: { ...this.state.isExpanded, [channel]: true },
@@ -770,6 +772,11 @@ class ToastStore {
 
   toggleExpand = (channel = DEFAULT_CHANNEL) => {
     const isExpanded = this.isChannelExpanded(channel);
+    // TEMP DEBUG (revert before merge)
+    console.warn(
+      `[sonner-debug] store.toggleExpand channel="${channel}" ` +
+        `isExpanded=${isExpanded} cooldown=${this.collapseCooldowns.has(channel)}`
+    );
     if (!isExpanded && this.collapseCooldowns.has(channel)) {
       return;
     }

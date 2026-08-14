@@ -157,8 +157,13 @@ export const ToastSwipeHandler: React.FC<
       runOnJS(onFinalize)();
     });
 
+  // TEMP DEBUG (revert before merge): trace whether the native tap fires.
+  const debugTapLog = (x: number, y: number) => {
+    console.warn(`[sonner-debug] tap onEnd fired x=${x} y=${y}`);
+  };
   const tap = Gesture.Tap().onEnd((event) => {
     'worklet';
+    runOnJS(debugTapLog)(event.x, event.y);
     if (onPress) {
       runOnJS(onPress)({ x: event.x, y: event.y });
     }

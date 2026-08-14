@@ -64,6 +64,12 @@ export const useToastSwipeProps = ({
   const onSwipePress = React.useCallback(
     ({ x }: { x: number; y: number }) => {
       const pressToastPosition = position || positionCtx;
+      // TEMP DEBUG (revert before merge)
+      console.warn(
+        `[sonner-debug] onSwipePress id=${id} x=${x} screenWidth=${screenWidth} ` +
+          `enableStacking=${enableStacking} numberOfToasts=${numberOfToasts} ` +
+          `position=${pressToastPosition} isExpanded=${isExpanded}`
+      );
       if (
         enableStacking &&
         numberOfToasts > 1 &&
@@ -82,6 +88,8 @@ export const useToastSwipeProps = ({
             onDismiss?.(id);
           }
         } else {
+          // TEMP DEBUG (revert before merge)
+          console.warn('[sonner-debug] calling toggleExpand');
           toggleExpand();
         }
       }
