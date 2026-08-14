@@ -33,6 +33,23 @@ export const DEFAULT_CHANNEL = '';
 export const channelOf = (toast: { toasterId?: string }): string =>
   toast.toasterId ?? DEFAULT_CHANNEL;
 
+// Pure snapshot readers for the sparse channel records. Render code MUST use
+// these on the useSyncExternalStore snapshot — never the store-instance
+// accessors: the React Compiler memoizes render expressions by their inputs,
+// and a store method call has only `channel` as a visible input, so it gets
+// cached across renders and never sees state changes. The snapshot object is
+// a tracked reactive input, so these recompute exactly when the store
+// notifies.
+export const getChannelExpanded = (
+  state: Pick<ToastStoreState, 'isExpanded'>,
+  channel: string = DEFAULT_CHANNEL
+): boolean => state.isExpanded[channel] ?? false;
+
+export const getChannelOverlay = (
+  state: Pick<ToastStoreState, 'shouldShowOverlay'>,
+  channel: string = DEFAULT_CHANNEL
+): boolean => state.shouldShowOverlay[channel] ?? false;
+
 type Subscriber = () => void;
 
 type ToastStoreConfig = {
@@ -96,11 +113,13 @@ class ToastStore {
 
   // Channel state is stored sparsely (a channel appears only once it has been
   // used), so always read it through these — never index the record directly.
+  // Store-internal/imperative use only; render code reads the snapshot via
+  // getChannelExpanded/getChannelOverlay (see those for why).
   isChannelExpanded = (channel = DEFAULT_CHANNEL): boolean =>
-    this.state.isExpanded[channel] ?? false;
+    getChannelExpanded(this.state, channel);
 
   shouldShowOverlayFor = (channel = DEFAULT_CHANNEL): boolean =>
-    this.state.shouldShowOverlay[channel] ?? false;
+    getChannelOverlay(this.state, channel);
 
   // Tracks how many Toasters are mounted for a channel. A named channel exists
   // only while at least one is: when the last unmounts, its toasts are dropped

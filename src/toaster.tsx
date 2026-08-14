@@ -13,7 +13,13 @@ import {
   type ToastPosition,
   type ToastProps,
 } from './types';
-import { channelOf, DEFAULT_CHANNEL, toastStore } from './toast-store';
+import {
+  channelOf,
+  DEFAULT_CHANNEL,
+  getChannelExpanded,
+  getChannelOverlay,
+  toastStore,
+} from './toast-store';
 import { sonnerDebug } from './debug';
 const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
@@ -80,8 +86,11 @@ export const Toaster: React.FC<ToasterProps> = ({
   const { toasts: allToasts, toastHeights, toastHeightsVersion } = storeState;
 
   const channel = id ?? DEFAULT_CHANNEL;
-  const shouldShowOverlay = toastStore.shouldShowOverlayFor(channel);
-  const isExpanded = toastStore.isChannelExpanded(channel);
+  // From the SNAPSHOT, not toastStore accessors: under the React Compiler an
+  // accessor call is memoized on `channel` alone and never re-reads the store,
+  // freezing expansion/overlay at their first-render values on device.
+  const shouldShowOverlay = getChannelOverlay(storeState, channel);
+  const isExpanded = getChannelExpanded(storeState, channel);
   // TEMP DEBUG (revert before merge)
   sonnerDebug(`Toaster render channel="${channel}" isExpanded=${isExpanded}`);
 
