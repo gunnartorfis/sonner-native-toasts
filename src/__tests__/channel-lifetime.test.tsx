@@ -1,16 +1,9 @@
 import { act } from 'react';
 import * as React from 'react';
-import TestRenderer from 'react-test-renderer';
 import { toast } from '../toast-fns';
 import { toastStore } from '../toast-store';
 import { Toaster } from '../toaster';
-import { cleanupToasterRenderers, resetToastStore } from './test-utils';
-
-const titlesIn = (channel = '') =>
-  toastStore
-    .getSnapshot()
-    .toasts.filter((entry) => (entry.toasterId ?? '') === channel)
-    .map((entry) => entry.title);
+import { createToasterHarness, resetToastStore, titlesIn } from './test-utils';
 
 // The channel clear is deferred by a tick so a StrictMode/same-commit remount
 // can cancel it; flush that tick.
@@ -21,23 +14,13 @@ const flushChannelClear = () => {
 };
 
 describe('channel lifetime', () => {
-  const renderers: TestRenderer.ReactTestRenderer[] = [];
-  const render = (element: React.ReactElement) => {
-    let renderer!: TestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = TestRenderer.create(element);
-    });
-    renderers.push(renderer);
-    return renderer;
-  };
+  const { render, cleanup } = createToasterHarness();
 
   beforeEach(() => {
     resetToastStore();
     jest.clearAllTimers();
   });
-  afterEach(() => {
-    cleanupToasterRenderers(renderers);
-  });
+  afterEach(cleanup);
 
   it('drops a named channel’s toasts, timers and refs when its Toaster unmounts', () => {
     render(<Toaster />);
@@ -149,6 +132,29 @@ describe('channel lifetime', () => {
     });
 
     expect(titlesIn('sheet')).toEqual(['s1', 's2', 's3']);
+  });
+
+  it('drops channel-keyed state even when the channel has no toasts', () => {
+    const sheet = render(<Toaster id="sheet" />);
+    act(() => {
+      toast('s1', { toasterId: 'sheet' });
+    });
+    // Dismissing leaves isExpanded/shouldShowOverlay KEYS behind (values
+    // false-ish) and schedules a hide timeout for the channel.
+    act(() => {
+      toast.dismiss();
+    });
+
+    act(() => {
+      sheet.unmount();
+    });
+    flushChannelClear();
+
+    // Key-absence assertions: this is a leak check on the sparse records, so
+    // direct indexing (normally forbidden) is the point.
+    const snapshot = toastStore.getSnapshot();
+    expect('sheet' in snapshot.shouldShowOverlay).toBe(false);
+    expect('sheet' in snapshot.isExpanded).toBe(false);
   });
 
   it('does not apply an unmounted default Toaster’s config to later toasts', () => {

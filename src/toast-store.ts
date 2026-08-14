@@ -28,7 +28,8 @@ type ToastStoreState = {
 // <Toaster />. Matches web Sonner's `!toast.toasterId` rule.
 export const DEFAULT_CHANNEL = '';
 
-const channelOf = (toast: { toasterId?: string }): string =>
+// The single definition of the routing rule; Toaster's filter uses it too.
+export const channelOf = (toast: { toasterId?: string }): string =>
   toast.toasterId ?? DEFAULT_CHANNEL;
 
 type Subscriber = () => void;
@@ -66,8 +67,11 @@ class ToastStore {
     string,
     ReturnType<typeof setTimeout>
   > = {};
-  private collapseCooldown = false;
-  private collapseCooldownTimeout: ReturnType<typeof setTimeout> | null = null;
+  private collapseCooldowns = new Set<string>();
+  private collapseCooldownTimeouts: Record<
+    string,
+    ReturnType<typeof setTimeout>
+  > = {};
 
   subscribe = (callback: Subscriber) => {
     this.subscribers.add(callback);
@@ -128,11 +132,15 @@ class ToastStore {
 
     return () => {
       const remaining = (this.mountedByChannel[channel] ?? 1) - 1;
-      this.mountedByChannel[channel] = Math.max(remaining, 0);
 
       if (remaining > 0) {
+        this.mountedByChannel[channel] = remaining;
         return;
       }
+
+      // Delete rather than pin at 0, so dynamic channel ids (a Toaster per
+      // sheet instance) don't grow the record for the app's lifetime.
+      delete this.mountedByChannel[channel];
 
       this.clearChannelTimeouts[channel] = setTimeout(() => {
         delete this.clearChannelTimeouts[channel];
@@ -187,6 +195,26 @@ class ToastStore {
       return;
     }
 
+    // Channel-keyed state goes unconditionally — even a toastless channel may
+    // hold a pending hide timeout or stale expansion/overlay entries, and the
+    // keys must not accumulate across dynamic channel ids.
+    const pendingHide = this.hideOverlayTimeouts[channel];
+    if (pendingHide) {
+      clearTimeout(pendingHide);
+      delete this.hideOverlayTimeouts[channel];
+    }
+    const pendingCooldown = this.collapseCooldownTimeouts[channel];
+    if (pendingCooldown) {
+      clearTimeout(pendingCooldown);
+      delete this.collapseCooldownTimeouts[channel];
+    }
+    this.collapseCooldowns.delete(channel);
+
+    const restExpanded = { ...this.state.isExpanded };
+    delete restExpanded[channel];
+    const restOverlay = { ...this.state.shouldShowOverlay };
+    delete restOverlay[channel];
+
     const remainingToasts: ToastProps[] = [];
     const clearedIds: Array<string | number> = [];
     for (const currentToast of this.state.toasts) {
@@ -198,6 +226,12 @@ class ToastStore {
     }
 
     if (clearedIds.length === 0) {
+      this.state = {
+        ...this.state,
+        isExpanded: restExpanded,
+        shouldShowOverlay: restOverlay,
+      };
+      this.notify();
       return;
     }
 
@@ -215,11 +249,6 @@ class ToastStore {
         heightsChanged = true;
       }
     }
-
-    const restExpanded = { ...this.state.isExpanded };
-    delete restExpanded[channel];
-    const restOverlay = { ...this.state.shouldShowOverlay };
-    delete restOverlay[channel];
 
     this.state = {
       ...this.state,
@@ -397,7 +426,15 @@ class ToastStore {
       ? this.state.toastsCounter
       : this.state.toastsCounter + 1;
 
-    const channel = channelOf(options);
+    const existingToast = this.state.toastsById.get(id);
+
+    // An update that omits toasterId stays in the existing toast's channel
+    // (the merge below keeps the field, so the bookkeeping must match) —
+    // otherwise the default channel's config would apply and its overlay flag
+    // would be stranded on.
+    const channel = channelOf({
+      toasterId: options.toasterId ?? existingToast?.toasterId,
+    });
     const config = this.configFor(channel);
 
     const duration =
@@ -413,8 +450,6 @@ class ToastStore {
       index: 0,
       orderedToastIds: [],
     };
-
-    const existingToast = this.state.toastsById.get(newToast.id);
 
     const shouldUpdate = existingToast && options?.id !== undefined;
 
@@ -716,14 +751,17 @@ class ToastStore {
       ...this.state,
       isExpanded: { ...this.state.isExpanded, [channel]: false },
     };
-    // Prevent immediate re-expansion — flag clears after timeout
-    this.collapseCooldown = true;
-    if (this.collapseCooldownTimeout) {
-      clearTimeout(this.collapseCooldownTimeout);
+    // Prevent immediate re-expansion — flag clears after timeout. Scoped to
+    // the channel: collapsing the sheet's stack must not swallow an expand
+    // tap on the root stack.
+    this.collapseCooldowns.add(channel);
+    const pendingCooldown = this.collapseCooldownTimeouts[channel];
+    if (pendingCooldown) {
+      clearTimeout(pendingCooldown);
     }
-    this.collapseCooldownTimeout = setTimeout(() => {
-      this.collapseCooldown = false;
-      this.collapseCooldownTimeout = null;
+    this.collapseCooldownTimeouts[channel] = setTimeout(() => {
+      this.collapseCooldowns.delete(channel);
+      delete this.collapseCooldownTimeouts[channel];
     }, 100);
     // Resume this channel's timers when collapsed
     this.resumeAllTimers(channel);
@@ -732,7 +770,7 @@ class ToastStore {
 
   toggleExpand = (channel = DEFAULT_CHANNEL) => {
     const isExpanded = this.isChannelExpanded(channel);
-    if (!isExpanded && this.collapseCooldown) {
+    if (!isExpanded && this.collapseCooldowns.has(channel)) {
       return;
     }
 

@@ -6,8 +6,26 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { useToasterParams } from '../hooks/useToasterParams';
 
-const RootLayout: React.FC = () => {
+const HeaderLink: React.FC<{ label: string; onPress: () => void }> = ({
+  label,
+  onPress,
+}) => {
   const colorScheme = useColorScheme();
+  return (
+    <Pressable onPress={onPress} hitSlop={8}>
+      <Text
+        style={{
+          color: colorScheme === 'dark' ? '#0A84FF' : '#007AFF',
+          fontSize: 17,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+};
+
+const RootLayout: React.FC = () => {
   const router = useRouter();
   const {
     position,
@@ -35,34 +53,14 @@ const RootLayout: React.FC = () => {
               title: 'Toasts',
               headerRight: () => (
                 <View style={{ flexDirection: 'row', gap: 16 }}>
-                  <Pressable
+                  <HeaderLink
+                    label="Channels"
                     onPress={() => router.push('/multiple-toasters')}
-                    hitSlop={8}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          colorScheme === 'dark' ? '#0A84FF' : '#007AFF',
-                        fontSize: 17,
-                      }}
-                    >
-                      Channels
-                    </Text>
-                  </Pressable>
-                  <Pressable
+                  />
+                  <HeaderLink
+                    label="Modal"
                     onPress={() => router.push('/modal')}
-                    hitSlop={8}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          colorScheme === 'dark' ? '#0A84FF' : '#007AFF',
-                        fontSize: 17,
-                      }}
-                    >
-                      Modal
-                    </Text>
-                  </Pressable>
+                  />
                 </View>
               ),
             }}

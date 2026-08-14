@@ -1,6 +1,7 @@
 import { act } from 'react';
+import TestRenderer from 'react-test-renderer';
 import type { ReactTestRenderer } from 'react-test-renderer';
-import { toastStore } from '../toast-store';
+import { channelOf, DEFAULT_CHANNEL, toastStore } from '../toast-store';
 
 // Single source of truth for resetting ToastStore private state between
 // tests. When a field is added to the store, extend THIS helper — not the
@@ -24,8 +25,8 @@ export const resetToastStore = () => {
   toastStore['mountedByChannel'] = {};
   toastStore['clearChannelTimeouts'] = {};
   toastStore['warnedUnmountedChannels'] = new Set();
-  toastStore['collapseCooldown'] = false;
-  toastStore['collapseCooldownTimeout'] = null;
+  toastStore['collapseCooldowns'] = new Set();
+  toastStore['collapseCooldownTimeouts'] = {};
 };
 
 // afterEach cleanup for tests that mount <Toaster />: dismisses everything and
@@ -45,4 +46,29 @@ export const cleanupToasterRenderers = (renderers: ReactTestRenderer[]) => {
     });
   }
   renderers.length = 0;
+};
+
+// Titles of the store's toasts in one channel, in order — the standard
+// assertion helper for channel-routing tests.
+export const titlesIn = (channel = DEFAULT_CHANNEL) =>
+  toastStore
+    .getSnapshot()
+    .toasts.filter((entry) => channelOf(entry) === channel)
+    .map((entry) => entry.title);
+
+// The render half of the harness whose cleanup half is
+// cleanupToasterRenderers: an act()-wrapped TestRenderer.create that tracks
+// every renderer so afterEach can unmount them all.
+export const createToasterHarness = () => {
+  const renderers: ReactTestRenderer[] = [];
+  const render = (element: React.ReactElement): ReactTestRenderer => {
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(element);
+    });
+    renderers.push(renderer);
+    return renderer;
+  };
+  const cleanup = () => cleanupToasterRenderers(renderers);
+  return { render, cleanup };
 };

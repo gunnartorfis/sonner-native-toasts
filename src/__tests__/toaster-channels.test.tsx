@@ -1,9 +1,8 @@
 import { act } from 'react';
-import TestRenderer from 'react-test-renderer';
 import { toast } from '../toast-fns';
 import { toastStore } from '../toast-store';
 import { Toaster } from '../toaster';
-import { cleanupToasterRenderers, resetToastStore } from './test-utils';
+import { createToasterHarness, resetToastStore, titlesIn } from './test-utils';
 
 // One entry per Toast body render, so a toast rendered by two Toasters is
 // visible as two entries.
@@ -22,31 +21,15 @@ jest.mock('../use-toast-position', () => {
 const rendersOf = (id: string | number) =>
   renderedIds.filter((rendered) => rendered === id).length;
 
-const titlesIn = (channel = '') =>
-  toastStore
-    .getSnapshot()
-    .toasts.filter((entry) => (entry.toasterId ?? '') === channel)
-    .map((entry) => entry.title);
-
 describe('Toaster channels', () => {
-  const renderers: TestRenderer.ReactTestRenderer[] = [];
-  const render = (element: React.ReactElement) => {
-    let renderer!: TestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = TestRenderer.create(element);
-    });
-    renderers.push(renderer);
-    return renderer;
-  };
+  const { render, cleanup } = createToasterHarness();
 
   beforeEach(() => {
     resetToastStore();
     renderedIds.length = 0;
     jest.clearAllTimers();
   });
-  afterEach(() => {
-    cleanupToasterRenderers(renderers);
-  });
+  afterEach(cleanup);
 
   describe('routing', () => {
     it('renders each toast in exactly one Toaster', () => {
@@ -107,6 +90,31 @@ describe('Toaster channels', () => {
       });
       expect(titlesIn('sheet')).toEqual(['second']);
       expect(titlesIn()).toEqual([]);
+    });
+
+    it('updates a toast in its own channel without repeating toasterId', () => {
+      render(<Toaster />);
+      render(<Toaster id="sheet" duration={9000} />);
+      act(() => {
+        toast('loading', { id: 'x', toasterId: 'sheet' });
+      });
+
+      // The update omits toasterId; the toast already belongs to the sheet
+      // channel, so the sheet's config and overlay bookkeeping must be used.
+      act(() => {
+        toast('done', { id: 'x' });
+      });
+
+      expect(titlesIn('sheet')).toEqual(['done']);
+      expect(titlesIn()).toEqual([]);
+      // Sheet duration config, not the default channel's 4000.
+      expect(toastStore.getSnapshot().toastsById.get('x')?.duration).toBe(
+        9000
+      );
+      // The update must not strand the default channel's overlay flag: the
+      // root channel never had a toast, so its overlay must not be shown.
+      expect(toastStore.shouldShowOverlayFor()).toBe(false);
+      expect(toastStore.shouldShowOverlayFor('sheet')).toBe(true);
     });
 
     it('resolves a promise toast inside its own channel', async () => {
@@ -213,6 +221,28 @@ describe('Toaster channels', () => {
       expect(toastStore.isChannelExpanded()).toBe(false);
     });
 
+    it('scopes the collapse cooldown to its channel', () => {
+      render(<Toaster />);
+      render(<Toaster id="sheet" />);
+      act(() => {
+        toast('r1');
+        toast('r2');
+        toast('s1', { toasterId: 'sheet' });
+        toast('s2', { toasterId: 'sheet' });
+      });
+
+      // Collapse the sheet, then immediately try to expand the root — the
+      // sheet's 100ms re-expansion cooldown must not swallow the root's tap.
+      act(() => {
+        toastStore.expand('sheet');
+        toastStore.collapse('sheet');
+        toastStore.toggleExpand();
+      });
+
+      expect(toastStore.isChannelExpanded()).toBe(true);
+      expect(toastStore.isChannelExpanded('sheet')).toBe(false);
+    });
+
     it('pauses only the expanded channel’s timers', () => {
       render(<Toaster />);
       render(<Toaster id="sheet" />);
@@ -278,6 +308,30 @@ describe('Toaster channels', () => {
       );
     });
 
+    it('does not re-warn when the overlay wrapper remounts ToasterUI', () => {
+      render(<Toaster id="sheet" />);
+      render(<Toaster id="sheet" />);
+      expect(console.warn).toHaveBeenCalledTimes(1);
+
+      // Adding and clearing toasts flips shouldShowOverlay, which changes
+      // ToasterUI's position in the tree (bare vs wrapped). The channel
+      // refcount lives in the outer Toaster, so it must not cycle.
+      act(() => {
+        toast('a', { toasterId: 'sheet' });
+      });
+      act(() => {
+        toast.dismiss();
+      });
+      act(() => {
+        jest.runOnlyPendingTimers();
+      });
+      act(() => {
+        toast('b', { toasterId: 'sheet' });
+      });
+
+      expect(console.warn).toHaveBeenCalledTimes(1);
+    });
+
     it('does not warn for two unnamed Toasters', () => {
       render(<Toaster />);
       render(<Toaster />);
@@ -316,7 +370,7 @@ describe('Toaster channels', () => {
 
     it('does not warn when the channel’s Toaster mounts in the same commit', () => {
       act(() => {
-        TestRenderer.create(<Toaster id="sheet" />);
+        render(<Toaster id="sheet" />);
         toast('fine', { toasterId: 'sheet' });
       });
       act(() => {
