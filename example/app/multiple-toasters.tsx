@@ -161,6 +161,7 @@ const MultipleToastersScreen: React.FC = () => {
               fullWindowOverlay={false}
               position="bottom-center"
               visibleToasts={2}
+              enableStacking
               closeButton
             />
           </SafeAreaView>
