@@ -154,6 +154,23 @@ describe('Toaster channels', () => {
       expect(rendersOf(rootId) - rendersBefore).toBe(0);
     });
 
+    it('renders a toast that was waiting for its channel to mount', () => {
+      let waitingId: string | number = '';
+      act(() => {
+        waitingId = toast('waited', { toasterId: 'sheet' });
+      });
+      // No Toaster for the channel yet: nothing rendered, toast waiting.
+      expect(rendersOf(waitingId)).toBe(0);
+      act(() => {
+        jest.advanceTimersByTime(30_000);
+      });
+
+      render(<Toaster id="sheet" />);
+
+      expect(rendersOf(waitingId)).toBeGreaterThan(0);
+      expect(titlesIn('sheet')).toEqual(['waited']);
+    });
+
     it('leaves the single-Toaster path unchanged', () => {
       render(<Toaster />);
       let id: string | number = '';
