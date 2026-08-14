@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useWindowDimensions } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useDynamicToastContext, useToastContext } from './context';
-import { sonnerDebug } from './debug';
 import { isPressNearCloseButton } from './press-utils';
 import { toastStore } from './toast-store';
 import type { ToastProps } from './types';
@@ -65,12 +64,6 @@ export const useToastSwipeProps = ({
   const onSwipePress = React.useCallback(
     ({ x }: { x: number; y: number }) => {
       const pressToastPosition = position || positionCtx;
-      // TEMP DEBUG (revert before merge)
-      sonnerDebug(
-        `onSwipePress id=${id} x=${x} screenWidth=${screenWidth} ` +
-          `enableStacking=${enableStacking} numberOfToasts=${numberOfToasts} ` +
-          `position=${pressToastPosition} isExpanded=${isExpanded}`
-      );
       if (
         enableStacking &&
         numberOfToasts > 1 &&
@@ -89,8 +82,6 @@ export const useToastSwipeProps = ({
             onDismiss?.(id);
           }
         } else {
-          // TEMP DEBUG (revert before merge)
-          sonnerDebug('calling toggleExpand');
           toggleExpand();
         }
       }

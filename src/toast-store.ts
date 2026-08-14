@@ -2,7 +2,6 @@ import * as React from 'react';
 import { ENTERING_ANIMATION_DURATION } from './animations';
 import { toastDefaultValues } from './constants';
 import { areToastsEqual } from './toast-comparator';
-import { sonnerDebug } from './debug';
 import type { ToastProps, ToastRef } from './types';
 
 type ToastTimer = {
@@ -593,8 +592,6 @@ class ToastStore {
     id: string | number | undefined,
     origin?: 'onDismiss' | 'onAutoClose'
   ): string | number | undefined => {
-    // TEMP DEBUG (revert before merge)
-    sonnerDebug(`store.dismissToast id=${String(id)} origin=${String(origin)}`);
     if (id == null) {
       this.state.toasts.forEach((currentToast) => {
         this.clearTimer(currentToast.id);
@@ -763,22 +760,12 @@ class ToastStore {
       ...this.state,
       isExpanded: { ...this.state.isExpanded, [channel]: true },
     };
-    // TEMP DEBUG (revert before merge)
-    sonnerDebug(
-      `store.expand channel="${channel}" record=${JSON.stringify(this.state.isExpanded)} ` +
-        `subscribers=${this.subscribers.size}`
-    );
     // Pause this channel's timers when expanded
     this.pauseAllTimers(channel);
     this.notify();
   };
 
   collapse = (channel = DEFAULT_CHANNEL) => {
-    // TEMP DEBUG (revert before merge)
-    sonnerDebug(
-      `store.collapse channel="${channel}"\n` +
-        String(new Error().stack).split('\n').slice(1, 4).join('\n')
-    );
     this.state = {
       ...this.state,
       isExpanded: { ...this.state.isExpanded, [channel]: false },
@@ -802,11 +789,6 @@ class ToastStore {
 
   toggleExpand = (channel = DEFAULT_CHANNEL) => {
     const isExpanded = this.isChannelExpanded(channel);
-    // TEMP DEBUG (revert before merge)
-    sonnerDebug(
-      `store.toggleExpand channel="${channel}" isExpanded=${isExpanded} ` +
-        `cooldown=${this.collapseCooldowns.has(channel)}`
-    );
     if (!isExpanded && this.collapseCooldowns.has(channel)) {
       return;
     }

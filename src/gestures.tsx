@@ -11,7 +11,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useToastContext } from './context';
-import { sonnerDebug } from './debug';
 import { easeInOutCircFn } from './easings';
 import type { ToastPosition, ToastProps } from './types';
 
@@ -158,13 +157,8 @@ export const ToastSwipeHandler: React.FC<
       runOnJS(onFinalize)();
     });
 
-  // TEMP DEBUG (revert before merge): trace whether the native tap fires.
-  const debugTapLog = (x: number, y: number) => {
-    sonnerDebug(`tap onEnd fired x=${x} y=${y}`);
-  };
   const tap = Gesture.Tap().onEnd((event) => {
     'worklet';
-    runOnJS(debugTapLog)(event.x, event.y);
     if (onPress) {
       runOnJS(onPress)({ x: event.x, y: event.y });
     }

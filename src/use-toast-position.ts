@@ -50,10 +50,6 @@ export const useToastPosition = ({
       stackGap,
     });
 
-    // TEMP DEBUG (revert before merge)
-    console.log(
-      `[sonner-debug] worklet id=${id} isExpanded=${isExpanded} target=${calculatedPosition}`
-    );
     return withTiming(calculatedPosition, {
       duration: STACKING_ANIMATION_DURATION,
       easing: easeOutQuartFn,

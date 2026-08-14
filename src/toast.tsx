@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useToastLayoutAnimations } from './animations';
 import { toastDefaultValues } from './constants';
-import { sonnerDebug } from './debug';
 import { useDynamicToastContext, useToastContext } from './context';
 import { ToastSwipeHandler } from './gestures';
 import { ToastContent } from './toast-content';
@@ -122,10 +121,6 @@ const ToastComponent = React.forwardRef<ToastRef, ToastInternalProps>(
     );
 
     const stackGap = gap ?? toastDefaultValues.stackGap;
-    // TEMP DEBUG (revert before merge)
-    sonnerDebug(
-      `Toast render id=${id} isExpanded=${isExpanded} ordered=${orderedToastIds.join(',')}`
-    );
     const yPosition = useToastPosition({
       id,
       index,

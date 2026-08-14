@@ -20,7 +20,6 @@ import {
   getChannelOverlay,
   toastStore,
 } from './toast-store';
-import { sonnerDebug } from './debug';
 const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
 const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
@@ -91,8 +90,6 @@ export const Toaster: React.FC<ToasterProps> = ({
   // freezing expansion/overlay at their first-render values on device.
   const shouldShowOverlay = getChannelOverlay(storeState, channel);
   const isExpanded = getChannelExpanded(storeState, channel);
-  // TEMP DEBUG (revert before merge)
-  sonnerDebug(`Toaster render channel="${channel}" isExpanded=${isExpanded}`);
 
   // Channel lifetime lives HERE, not in ToasterUI: ToasterUI's position in
   // the tree changes when the overlay wrapper mounts/unmounts, so an effect
