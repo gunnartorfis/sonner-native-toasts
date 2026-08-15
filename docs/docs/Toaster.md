@@ -118,6 +118,23 @@ import { ZView } from 'react-native-z-view';
 />;
 ```
 
+:::warning
+Pass a **stable** component reference. An inline arrow (`ToasterOverlayWrapper={({ children }) => <>{children}</>}`) is a new component type on every render, which unmounts and remounts the whole toast tree — restarting enter animations and re-measuring heights. Define the wrapper at module level, or use `fullWindowOverlay={false}` if all you want is to opt out of the overlay.
+:::
+
+### Disabling the iOS full-window overlay
+
+`fullWindowOverlay={false}` renders the Toaster inline instead of inside
+`FullWindowOverlay`. This is required for a Toaster rendered inside a natively
+presented view such as a sheet, which is presented above the app window the
+overlay lives in. iOS only; no effect on other platforms.
+
+```tsx
+<Toaster id="sheet" fullWindowOverlay={false} />
+```
+
+See [Multiple toasters](/multiple-toasters) for the full sheet recipe.
+
 
 ### Dismiss toast on tap
 
@@ -210,6 +227,8 @@ toast.success('Saved!', {
 | icons                            |                                     Changes the default icons                                      |          `-` |
 | pauseWhenPageIsHidden            |                        Pauses toast timers when the app enters background.                         |      `false` |
 | `swipeToDismissDirection`        |                             Swipe direction to dismiss (`left`, `up`).                             |         `up` |
+| id                               |         Channel name. A named Toaster renders only toasts sent to it via `toasterId`.               |          `-` |
+| fullWindowOverlay                |       iOS only. Set `false` to render inline instead of inside `FullWindowOverlay`.                 |       `true` |
 | ToasterOverlayWrapper            |                                Custom component to wrap the Toaster.                               |        `div` |
 | ToastWrapper                     |                                 Custom component to wrap the Toast.                                |        `div` |
 | autoWiggleOnUpdate               |             Adds a wiggle animation on toast update. `never`, `toast-change`, `always`             |      `never` |

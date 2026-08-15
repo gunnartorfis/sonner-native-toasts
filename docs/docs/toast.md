@@ -206,6 +206,17 @@ toast('World');
 toast.dismiss();
 ```
 
+### Sending a toast to a specific Toaster
+
+If you render more than one `<Toaster />`, `toasterId` picks which one shows the
+toast. Without it, the toast goes to the unnamed root Toaster.
+
+```tsx
+toast('Saved', { toasterId: 'sheet' });
+```
+
+See [Multiple toasters](/multiple-toasters).
+
 ### Wiggling toasts
 
 <img src="videos/wiggle.gif" style={{ width: 300 }} />
@@ -238,6 +249,7 @@ Toasts can also be automatically wiggled by passing the `autoWiggleOnUpdate` pro
 | close                  |                    Custom close-button element; replaces the default close button.                    |          `-` |
 | styles                 |       Per-toast style overrides for each toast slot (`toast`, `title`, `description`, and more).       |          `-` |
 | id                     |                                        Custom id for the toast.                                        |          `-` |
+| toasterId              |     Sends the toast to `<Toaster id="…" />` instead of the default Toaster.                            |          `-` |
 | onPress                | Called when the toast is pressed. With `enableStacking` and multiple toasts, also toggles expansion.   |          `-` |
 | onDismiss              |       The function gets called when either the close button is clicked, or the toast is swiped.        |          `-` |
 | onAutoClose            | Function that gets called when the toast disappears automatically after it's timeout (duration` prop). |          `-` |

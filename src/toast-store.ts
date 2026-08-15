@@ -16,12 +16,38 @@ type ToastStoreState = {
   toastsById: Map<string | number, ToastProps>;
   toastsCounter: number;
   toastRefs: Record<string | number, React.RefObject<ToastRef | null>>;
-  shouldShowOverlay: boolean;
+  // Keyed by channel (a Toaster's `id`; DEFAULT_CHANNEL for unnamed ones).
+  shouldShowOverlay: Record<string, boolean>;
   toastTimers: Record<string | number, ToastTimer>;
   toastHeights: Record<string | number, number>;
   toastHeightsVersion: number;
-  isExpanded: boolean;
+  isExpanded: Record<string, boolean>;
 };
+
+// Toasts with no toasterId belong to this channel, rendered by an unnamed
+// <Toaster />. Matches web Sonner's `!toast.toasterId` rule.
+export const DEFAULT_CHANNEL = '';
+
+// The single definition of the routing rule; Toaster's filter uses it too.
+export const channelOf = (toast: { toasterId?: string }): string =>
+  toast.toasterId ?? DEFAULT_CHANNEL;
+
+// Pure snapshot readers for the sparse channel records. Render code MUST use
+// these on the useSyncExternalStore snapshot — never the store-instance
+// accessors: the React Compiler memoizes render expressions by their inputs,
+// and a store method call has only `channel` as a visible input, so it gets
+// cached across renders and never sees state changes. The snapshot object is
+// a tracked reactive input, so these recompute exactly when the store
+// notifies.
+export const getChannelExpanded = (
+  state: Pick<ToastStoreState, 'isExpanded'>,
+  channel: string = DEFAULT_CHANNEL
+): boolean => state.isExpanded[channel] ?? false;
+
+export const getChannelOverlay = (
+  state: Pick<ToastStoreState, 'shouldShowOverlay'>,
+  channel: string = DEFAULT_CHANNEL
+): boolean => state.shouldShowOverlay[channel] ?? false;
 
 type Subscriber = () => void;
 
@@ -38,19 +64,31 @@ class ToastStore {
     toastsById: new Map(),
     toastsCounter: 1,
     toastRefs: {},
-    shouldShowOverlay: false,
+    shouldShowOverlay: {},
     toastTimers: {},
     toastHeights: {},
     toastHeightsVersion: 0,
-    isExpanded: false,
+    isExpanded: {},
   };
 
   private subscribers = new Set<Subscriber>();
-  private config: ToastStoreConfig = {};
-  private hideOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
+  private configByChannel: Record<string, ToastStoreConfig> = {};
+  private hideOverlayTimeouts: Record<
+    string,
+    ReturnType<typeof setTimeout>
+  > = {};
   private promiseResolvers = new Map<string | number, boolean>();
-  private collapseCooldown = false;
-  private collapseCooldownTimeout: ReturnType<typeof setTimeout> | null = null;
+  private mountedByChannel: Record<string, number> = {};
+  private warnedUnmountedChannels = new Set<string>();
+  private clearChannelTimeouts: Record<
+    string,
+    ReturnType<typeof setTimeout>
+  > = {};
+  private collapseCooldowns = new Set<string>();
+  private collapseCooldownTimeouts: Record<
+    string,
+    ReturnType<typeof setTimeout>
+  > = {};
 
   subscribe = (callback: Subscriber) => {
     this.subscribers.add(callback);
@@ -63,8 +101,231 @@ class ToastStore {
     return this.state;
   };
 
-  setConfig = (config: ToastStoreConfig) => {
-    this.config = config;
+  // Channel-scoped: each mounted Toaster owns its own config, so two Toasters
+  // can no longer clobber each other's visibleToasts/duration/etc.
+  setConfig = (config: ToastStoreConfig, channel = DEFAULT_CHANNEL) => {
+    this.configByChannel[channel] = config;
+  };
+
+  private configFor = (channel: string): ToastStoreConfig =>
+    this.configByChannel[channel] ?? {};
+
+  // Web-Sonner parity: a toast addressed to a NAMED channel with no mounted
+  // Toaster waits — its auto-close timer starts when the channel mounts, so
+  // it can't silently expire before it was ever visible. The default channel
+  // keeps main's behavior (timers always run) for back-compat.
+  private isChannelLive = (channel: string): boolean =>
+    channel === DEFAULT_CHANNEL || (this.mountedByChannel[channel] ?? 0) > 0;
+
+  private startAutoClose = (
+    id: string | number,
+    duration: number,
+    channel: string
+  ) => {
+    if (!this.isChannelLive(channel)) {
+      return;
+    }
+    this.startTimer({
+      id,
+      duration,
+      onComplete: () => {
+        this.dismissToast(id, 'onAutoClose');
+      },
+    });
+  };
+
+  // Channel state is stored sparsely (a channel appears only once it has been
+  // used), so always read it through these — never index the record directly.
+  // Store-internal/imperative use only; render code reads the snapshot via
+  // getChannelExpanded/getChannelOverlay (see those for why).
+  isChannelExpanded = (channel = DEFAULT_CHANNEL): boolean =>
+    getChannelExpanded(this.state, channel);
+
+  shouldShowOverlayFor = (channel = DEFAULT_CHANNEL): boolean =>
+    getChannelOverlay(this.state, channel);
+
+  // Tracks how many Toasters are mounted for a channel. A named channel exists
+  // only while at least one is: when the last unmounts, its toasts are dropped
+  // (a sheet-scoped toast outliving the sheet is surprising). The default
+  // channel keeps its toasts, so unmount/remount of the root Toaster stays
+  // back-compatible; its config is still cleared.
+  //
+  // The clear is deferred by a tick and cancelled if a Toaster for the channel
+  // mounts again, because React double-invokes effects in dev StrictMode
+  // (mount, cleanup, mount) — a naive cleanup would wipe live toasts.
+  registerChannel = (channel: string): (() => void) => {
+    const pendingClear = this.clearChannelTimeouts[channel];
+    if (pendingClear) {
+      clearTimeout(pendingClear);
+      delete this.clearChannelTimeouts[channel];
+    }
+    const mounted = (this.mountedByChannel[channel] ?? 0) + 1;
+    this.mountedByChannel[channel] = mounted;
+    // The channel is live again, so a future orphaned toast is worth warning
+    // about afresh.
+    this.warnedUnmountedChannels.delete(channel);
+
+    // The channel just came alive: start the auto-close timers its waiting
+    // toasts deferred. Only toasts WITHOUT a timer entry — restarting live
+    // (possibly paused) timers on a StrictMode remount would reset durations.
+    if (mounted === 1 && channel !== DEFAULT_CHANNEL) {
+      for (const toast of this.state.toastsById.values()) {
+        if (channelOf(toast) !== channel) continue;
+        if (toast.promiseOptions || toast.id in this.state.toastTimers) {
+          continue;
+        }
+        this.startAutoClose(
+          toast.id,
+          toast.duration ??
+            this.configFor(channel).duration ??
+            toastDefaultValues.duration,
+          channel
+        );
+      }
+    }
+
+    if (__DEV__ && channel !== DEFAULT_CHANNEL && mounted > 1) {
+      console.warn(
+        `[sonner-native] Multiple <Toaster id="${channel}" /> are mounted. ` +
+          'Toasts sent to this channel will render once per Toaster, and the ' +
+          'Toasters will overwrite the config of one another.'
+      );
+    }
+
+    return () => {
+      const remaining = (this.mountedByChannel[channel] ?? 1) - 1;
+
+      if (remaining > 0) {
+        this.mountedByChannel[channel] = remaining;
+        return;
+      }
+
+      // Delete rather than pin at 0, so dynamic channel ids (a Toaster per
+      // sheet instance) don't grow the record for the app's lifetime.
+      delete this.mountedByChannel[channel];
+
+      this.clearChannelTimeouts[channel] = setTimeout(() => {
+        delete this.clearChannelTimeouts[channel];
+        if ((this.mountedByChannel[channel] ?? 0) > 0) {
+          return;
+        }
+        this.clearChannel(channel);
+      }, 0);
+    };
+  };
+
+  // A toast addressed to a channel with no mounted Toaster renders nowhere —
+  // the usual cause is a typo in `toasterId`. Checked on a later tick, not
+  // inline: registerChannel runs in an effect, so a Toaster mounting in the
+  // same commit as the toast (opening a sheet that immediately toasts) would
+  // otherwise warn spuriously. The toast is kept either way — it renders if a
+  // Toaster for the channel mounts before it auto-closes.
+  private warnIfChannelUnmounted = (channel: string) => {
+    if (!__DEV__ || channel === DEFAULT_CHANNEL) {
+      return;
+    }
+    if ((this.mountedByChannel[channel] ?? 0) > 0) {
+      return;
+    }
+    setTimeout(() => {
+      if ((this.mountedByChannel[channel] ?? 0) > 0) {
+        return;
+      }
+      const stillQueued = this.state.toasts.some(
+        (currentToast) => channelOf(currentToast) === channel
+      );
+      if (!stillQueued || this.warnedUnmountedChannels.has(channel)) {
+        return;
+      }
+      this.warnedUnmountedChannels.add(channel);
+      console.warn(
+        `[sonner-native] A toast was sent to toasterId "${channel}", but no ` +
+          `<Toaster id="${channel}" /> is mounted, so it renders nowhere. ` +
+          'Check the id for typos, or mount a Toaster for this channel.'
+      );
+    }, 0);
+  };
+
+  // Teardown, not a dismissal: onDismiss/onAutoClose deliberately don't fire.
+  // Config is dropped for every channel — including the default one, whose
+  // config used to outlive its Toaster. Toasts are dropped for named channels
+  // only.
+  private clearChannel = (channel: string) => {
+    delete this.configByChannel[channel];
+
+    if (channel === DEFAULT_CHANNEL) {
+      return;
+    }
+
+    // Channel-keyed state goes unconditionally — even a toastless channel may
+    // hold a pending hide timeout or stale expansion/overlay entries, and the
+    // keys must not accumulate across dynamic channel ids.
+    const pendingHide = this.hideOverlayTimeouts[channel];
+    if (pendingHide) {
+      clearTimeout(pendingHide);
+      delete this.hideOverlayTimeouts[channel];
+    }
+    const pendingCooldown = this.collapseCooldownTimeouts[channel];
+    if (pendingCooldown) {
+      clearTimeout(pendingCooldown);
+      delete this.collapseCooldownTimeouts[channel];
+    }
+    this.collapseCooldowns.delete(channel);
+
+    const restExpanded = { ...this.state.isExpanded };
+    delete restExpanded[channel];
+    const restOverlay = { ...this.state.shouldShowOverlay };
+    delete restOverlay[channel];
+
+    const remainingToasts: ToastProps[] = [];
+    const clearedIds: Array<string | number> = [];
+    for (const currentToast of this.state.toasts) {
+      if (channelOf(currentToast) === channel) {
+        clearedIds.push(currentToast.id);
+      } else {
+        remainingToasts.push(currentToast);
+      }
+    }
+
+    if (clearedIds.length === 0) {
+      this.state = {
+        ...this.state,
+        isExpanded: restExpanded,
+        shouldShowOverlay: restOverlay,
+      };
+      this.notify();
+      return;
+    }
+
+    const updatedIndex = this.cloneIndex();
+    const updatedRefs = { ...this.state.toastRefs };
+    const updatedHeights = { ...this.state.toastHeights };
+    let heightsChanged = false;
+
+    for (const id of clearedIds) {
+      this.clearTimer(id);
+      updatedIndex.delete(id);
+      delete updatedRefs[id];
+      if (id in updatedHeights) {
+        delete updatedHeights[id];
+        heightsChanged = true;
+      }
+    }
+
+    this.state = {
+      ...this.state,
+      toasts: remainingToasts,
+      toastsById: updatedIndex,
+      toastRefs: updatedRefs,
+      toastHeights: heightsChanged ? updatedHeights : this.state.toastHeights,
+      toastHeightsVersion: heightsChanged
+        ? this.state.toastHeightsVersion + 1
+        : this.state.toastHeightsVersion,
+      isExpanded: restExpanded,
+      shouldShowOverlay: restOverlay,
+    };
+
+    this.notify();
   };
 
   private notify = () => {
@@ -141,14 +402,20 @@ class ToastStore {
     );
   };
 
-  pauseAllTimers = () => {
+  pauseAllTimers = (channel?: string) => {
     for (const toast of this.state.toastsById.values()) {
+      if (channel !== undefined && channelOf(toast) !== channel) {
+        continue;
+      }
       this.pauseTimer(toast.id);
     }
   };
 
-  resumeAllTimers = () => {
+  resumeAllTimers = (channel?: string) => {
     for (const toast of this.state.toastsById.values()) {
+      if (channel !== undefined && channelOf(toast) !== channel) {
+        continue;
+      }
       this.resumeTimer(toast.id);
     }
   };
@@ -175,6 +442,7 @@ class ToastStore {
       this.addToast({
         title: promiseOptions.success(data) ?? 'Success',
         id,
+        toasterId: toast.toasterId,
         variant: 'success',
         promiseOptions: undefined,
         duration: toast.duration,
@@ -189,6 +457,7 @@ class ToastStore {
             ? promiseOptions.error(error)
             : (promiseOptions.error ?? 'Error'),
         id,
+        toasterId: toast.toasterId,
         variant: 'error',
         promiseOptions: undefined,
         duration: toast.duration,
@@ -219,8 +488,19 @@ class ToastStore {
       ? this.state.toastsCounter
       : this.state.toastsCounter + 1;
 
+    const existingToast = this.state.toastsById.get(id);
+
+    // An update that omits toasterId stays in the existing toast's channel
+    // (the merge below keeps the field, so the bookkeeping must match) —
+    // otherwise the default channel's config would apply and its overlay flag
+    // would be stranded on.
+    const channel = channelOf({
+      toasterId: options.toasterId ?? existingToast?.toasterId,
+    });
+    const config = this.configFor(channel);
+
     const duration =
-      options.duration ?? this.config.duration ?? toastDefaultValues.duration;
+      options.duration ?? config.duration ?? toastDefaultValues.duration;
 
     const newToast: ToastProps = {
       ...options,
@@ -233,14 +513,12 @@ class ToastStore {
       orderedToastIds: [],
     };
 
-    const existingToast = this.state.toastsById.get(newToast.id);
-
     const shouldUpdate = existingToast && options?.id !== undefined;
 
     if (shouldUpdate) {
       const shouldWiggle =
-        this.config.autoWiggleOnUpdate === 'always' ||
-        (this.config.autoWiggleOnUpdate === 'toast-change' &&
+        config.autoWiggleOnUpdate === 'always' ||
+        (config.autoWiggleOnUpdate === 'toast-change' &&
           !areToastsEqual(newToast, existingToast));
 
       if (shouldWiggle && options.id !== undefined) {
@@ -261,13 +539,7 @@ class ToastStore {
 
       // Restart the auto-dismiss timer on every non-promise update
       if (!newToast.promiseOptions) {
-        this.startTimer({
-          id,
-          duration,
-          onComplete: () => {
-            this.dismissToast(id, 'onAutoClose');
-          },
-        });
+        this.startAutoClose(id, duration, channel);
       }
 
       const updatedIndex = this.cloneIndex();
@@ -278,7 +550,7 @@ class ToastStore {
         ...this.state,
         toasts: updatedToasts,
         toastsById: updatedIndex,
-        shouldShowOverlay: true,
+        shouldShowOverlay: { ...this.state.shouldShowOverlay, [channel]: true },
       };
     } else {
       const newToasts: ToastProps[] = [...this.state.toasts, newToast];
@@ -289,14 +561,20 @@ class ToastStore {
       }
 
       const visibleToasts =
-        this.config.visibleToasts ?? toastDefaultValues.visibleToasts;
+        config.visibleToasts ?? toastDefaultValues.visibleToasts;
       const newIndex = this.cloneIndex();
       newIndex.set(newToast.id, newToast);
       const updatedHeights = { ...this.state.toastHeights };
       let heightsChanged = false;
-      if (newToasts.length > visibleToasts) {
-        const removedToast = newToasts.shift();
+      // Trim within the channel only — a busy root Toaster must not evict
+      // toasts belonging to a sheet Toaster.
+      const channelToasts = newToasts.filter(
+        (toast) => channelOf(toast) === channel
+      );
+      if (channelToasts.length > visibleToasts) {
+        const removedToast = channelToasts[0];
         if (removedToast) {
+          newToasts.splice(newToasts.indexOf(removedToast), 1);
           this.clearTimer(removedToast.id);
           newIndex.delete(removedToast.id);
           delete newToastRefs[removedToast.id];
@@ -317,7 +595,7 @@ class ToastStore {
           ? this.state.toastHeightsVersion + 1
           : this.state.toastHeightsVersion,
         toastsCounter: nextCounter,
-        shouldShowOverlay: true,
+        shouldShowOverlay: { ...this.state.shouldShowOverlay, [channel]: true },
       };
 
       // Handle promise if present
@@ -325,20 +603,17 @@ class ToastStore {
         this.handlePromise(newToast);
       } else {
         // Start timer for regular toasts
-        this.startTimer({
-          id,
-          duration,
-          onComplete: () => {
-            this.dismissToast(id, 'onAutoClose');
-          },
-        });
+        this.startAutoClose(id, duration, channel);
       }
     }
 
-    if (this.hideOverlayTimeout) {
-      clearTimeout(this.hideOverlayTimeout);
-      this.hideOverlayTimeout = null;
+    const pendingHide = this.hideOverlayTimeouts[channel];
+    if (pendingHide) {
+      clearTimeout(pendingHide);
+      delete this.hideOverlayTimeouts[channel];
     }
+
+    this.warnIfChannelUnmounted(channel);
 
     this.notify();
     return id;
@@ -358,6 +633,8 @@ class ToastStore {
         }
       });
 
+      const channelsWithToasts = new Set(this.state.toasts.map(channelOf));
+
       this.state = {
         ...this.state,
         toasts: [],
@@ -367,9 +644,11 @@ class ToastStore {
         toastTimers: {},
         toastHeights: {},
         toastHeightsVersion: this.state.toastHeightsVersion + 1,
-        isExpanded: false,
+        isExpanded: {},
       };
-      this.scheduleHideOverlay();
+      for (const channel of channelsWithToasts) {
+        this.scheduleHideOverlay(channel);
+      }
       this.notify();
       return;
     }
@@ -396,8 +675,14 @@ class ToastStore {
     const updatedRefs = { ...this.state.toastRefs };
     delete updatedRefs[id];
 
+    const channel = toastForCallback
+      ? channelOf(toastForCallback)
+      : DEFAULT_CHANNEL;
+    const remainingInChannel = filteredToasts.filter(
+      (currentToast) => channelOf(currentToast) === channel
+    );
     const shouldAutoCollapse =
-      filteredToasts.length <= 1 && this.state.isExpanded;
+      remainingInChannel.length <= 1 && this.isChannelExpanded(channel);
 
     const updatedIndex = this.cloneIndex();
     updatedIndex.delete(id);
@@ -411,11 +696,13 @@ class ToastStore {
       toastHeightsVersion: heightsChanged
         ? this.state.toastHeightsVersion + 1
         : this.state.toastHeightsVersion,
-      isExpanded: shouldAutoCollapse ? false : this.state.isExpanded,
+      isExpanded: shouldAutoCollapse
+        ? { ...this.state.isExpanded, [channel]: false }
+        : this.state.isExpanded,
     };
 
     if (shouldAutoCollapse) {
-      this.resumeAllTimers();
+      this.resumeAllTimers(channel);
     }
 
     if (origin === 'onDismiss') {
@@ -424,27 +711,31 @@ class ToastStore {
       toastForCallback?.onAutoClose?.(id);
     }
 
-    // Schedule hiding overlay if no toasts remain
-    if (filteredToasts.length === 0) {
-      this.scheduleHideOverlay();
+    // Schedule hiding overlay if no toasts remain in this channel
+    if (remainingInChannel.length === 0) {
+      this.scheduleHideOverlay(channel);
     }
 
     this.notify();
     return id;
   };
 
-  private scheduleHideOverlay = () => {
-    if (this.hideOverlayTimeout) {
-      clearTimeout(this.hideOverlayTimeout);
+  private scheduleHideOverlay = (channel = DEFAULT_CHANNEL) => {
+    const pending = this.hideOverlayTimeouts[channel];
+    if (pending) {
+      clearTimeout(pending);
     }
 
     // Wait for animation to finish before hiding overlay
-    this.hideOverlayTimeout = setTimeout(() => {
+    this.hideOverlayTimeouts[channel] = setTimeout(() => {
       this.state = {
         ...this.state,
-        shouldShowOverlay: false,
+        shouldShowOverlay: {
+          ...this.state.shouldShowOverlay,
+          [channel]: false,
+        },
       };
-      this.hideOverlayTimeout = null;
+      delete this.hideOverlayTimeouts[channel];
       this.notify();
     }, ENTERING_ANIMATION_DURATION);
   };
@@ -463,14 +754,13 @@ class ToastStore {
 
     // Reset timer on wiggle (but not for Infinity duration or promise toasts)
     if (toast.duration !== Infinity && !toast.promiseOptions) {
-      this.startTimer({
+      this.startAutoClose(
         id,
-        duration:
-          toast.duration ?? this.config.duration ?? toastDefaultValues.duration,
-        onComplete: () => {
-          this.dismissToast(id, 'onAutoClose');
-        },
-      });
+        toast.duration ??
+          this.configFor(channelOf(toast)).duration ??
+          toastDefaultValues.duration,
+        channelOf(toast)
+      );
     }
   };
 
@@ -493,44 +783,48 @@ class ToastStore {
     this.notify();
   };
 
-  expand = () => {
+  expand = (channel = DEFAULT_CHANNEL) => {
     this.state = {
       ...this.state,
-      isExpanded: true,
+      isExpanded: { ...this.state.isExpanded, [channel]: true },
     };
-    // Pause all timers when expanded
-    this.pauseAllTimers();
+    // Pause this channel's timers when expanded
+    this.pauseAllTimers(channel);
     this.notify();
   };
 
-  collapse = () => {
+  collapse = (channel = DEFAULT_CHANNEL) => {
     this.state = {
       ...this.state,
-      isExpanded: false,
+      isExpanded: { ...this.state.isExpanded, [channel]: false },
     };
-    // Prevent immediate re-expansion — flag clears after timeout
-    this.collapseCooldown = true;
-    if (this.collapseCooldownTimeout) {
-      clearTimeout(this.collapseCooldownTimeout);
+    // Prevent immediate re-expansion — flag clears after timeout. Scoped to
+    // the channel: collapsing the sheet's stack must not swallow an expand
+    // tap on the root stack.
+    this.collapseCooldowns.add(channel);
+    const pendingCooldown = this.collapseCooldownTimeouts[channel];
+    if (pendingCooldown) {
+      clearTimeout(pendingCooldown);
     }
-    this.collapseCooldownTimeout = setTimeout(() => {
-      this.collapseCooldown = false;
-      this.collapseCooldownTimeout = null;
+    this.collapseCooldownTimeouts[channel] = setTimeout(() => {
+      this.collapseCooldowns.delete(channel);
+      delete this.collapseCooldownTimeouts[channel];
     }, 100);
-    // Resume all timers when collapsed
-    this.resumeAllTimers();
+    // Resume this channel's timers when collapsed
+    this.resumeAllTimers(channel);
     this.notify();
   };
 
-  toggleExpand = () => {
-    if (!this.state.isExpanded && this.collapseCooldown) {
+  toggleExpand = (channel = DEFAULT_CHANNEL) => {
+    const isExpanded = this.isChannelExpanded(channel);
+    if (!isExpanded && this.collapseCooldowns.has(channel)) {
       return;
     }
 
-    if (this.state.isExpanded) {
-      this.collapse();
+    if (isExpanded) {
+      this.collapse(channel);
     } else {
-      this.expand();
+      this.expand(channel);
     }
   };
 }

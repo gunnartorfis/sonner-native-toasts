@@ -81,6 +81,20 @@ State lives in a single imperative store; React reads it via
 - `src/gestures.tsx` — swipe-to-dismiss and tap, via gesture-handler.
 - `src/index.tsx` — public entry; re-exports `Toaster`, `toast`, and the types.
 
+## React Compiler rules
+
+The example app runs the React Compiler (`"reactCompiler": true` in
+`example/app.json`) and compiles the library source through its babel. The
+compiler memoizes render expressions by their visible inputs, so **render code
+must never read store state through `toastStore` methods** — a call like
+`toastStore.isChannelExpanded(channel)` gets cached on `channel` alone and
+never sees later store changes. Derive render state from the
+`useSyncExternalStore` snapshot instead (see `getChannelExpanded` /
+`getChannelOverlay` in `src/toast-store.ts`). Jest does NOT run the compiler,
+so this class of bug passes every unit test and only reproduces on device —
+if a device symptom contradicts green tests, suspect a memoized impure render
+read first.
+
 ## Reanimated & native-bridge rules
 
 - UI-thread functions carry a `'worklet';` directive as their first statement.

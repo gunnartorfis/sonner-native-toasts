@@ -184,8 +184,7 @@ describe('ToastStore', () => {
     it('should show overlay when toast is added', () => {
       toastStore.addToast({ title: 'Test Toast', variant: 'info' as const });
 
-      const state = toastStore.getSnapshot();
-      expect(state.shouldShowOverlay).toBe(true);
+      expect(toastStore.shouldShowOverlayFor()).toBe(true);
     });
   });
 
@@ -223,7 +222,7 @@ describe('ToastStore', () => {
       const state = toastStore.getSnapshot();
       expect(state.toasts).toHaveLength(0);
       expect(state.toastsCounter).toBe(1);
-      expect(state.isExpanded).toBe(false);
+      expect(toastStore.isChannelExpanded()).toBe(false);
     });
 
     it('should clean up timers when dismissing toast', () => {
@@ -251,22 +250,19 @@ describe('ToastStore', () => {
       toastStore.dismissToast('toast-1');
       toastStore.dismissToast('toast-2');
 
-      const state = toastStore.getSnapshot();
-      expect(state.isExpanded).toBe(false);
+      expect(toastStore.isChannelExpanded()).toBe(false);
     });
 
     it('should schedule hide overlay when no toasts remain', () => {
       toastStore.dismissToast(undefined); // Clear all
 
       // Overlay should still be visible immediately
-      const state = toastStore.getSnapshot();
-      expect(state.shouldShowOverlay).toBe(true);
+      expect(toastStore.shouldShowOverlayFor()).toBe(true);
 
       // After animation duration, overlay should be hidden
       jest.advanceTimersByTime(600); // ANIMATION_DURATION
 
-      const newState = toastStore.getSnapshot();
-      expect(newState.shouldShowOverlay).toBe(false);
+      expect(toastStore.shouldShowOverlayFor()).toBe(false);
     });
   });
 
@@ -471,10 +467,10 @@ describe('ToastStore', () => {
     it('should expand and pause all timers', () => {
       toastStore.expand();
 
-      const state = toastStore.getSnapshot();
-      expect(state.isExpanded).toBe(true);
+      expect(toastStore.isChannelExpanded()).toBe(true);
 
       // Check that timers are paused
+      const state = toastStore.getSnapshot();
       Object.values(state.toastTimers).forEach((timer) => {
         expect(timer.isPaused).toBe(true);
       });
@@ -485,7 +481,7 @@ describe('ToastStore', () => {
 
       // Verify expanded and paused
       let state = toastStore.getSnapshot();
-      expect(state.isExpanded).toBe(true);
+      expect(toastStore.isChannelExpanded()).toBe(true);
       Object.values(state.toastTimers).forEach((timer) => {
         expect(timer.isPaused).toBe(true);
       });
@@ -493,7 +489,7 @@ describe('ToastStore', () => {
       toastStore.collapse();
 
       state = toastStore.getSnapshot();
-      expect(state.isExpanded).toBe(false);
+      expect(toastStore.isChannelExpanded()).toBe(false);
 
       // After collapse, resumeAllTimers is called which creates new timers
       // The timers should exist (may or may not show as paused immediately with fake timers)
@@ -501,26 +497,24 @@ describe('ToastStore', () => {
     });
 
     it('should expand from collapsed state', () => {
-      const initialState = toastStore.getSnapshot();
-      expect(initialState.isExpanded).toBe(false);
+      expect(toastStore.isChannelExpanded()).toBe(false);
 
       // Use expand() directly to avoid cooldown issues with toggleExpand()
       toastStore.expand();
-      const expandedState = toastStore.getSnapshot();
-      expect(expandedState.isExpanded).toBe(true);
+      expect(toastStore.isChannelExpanded()).toBe(true);
     });
 
     it('should use expand/collapse methods directly', () => {
       // Test expand and collapse directly rather than through toggle
       // to avoid cooldown timing issues in tests
       toastStore.expand();
-      expect(toastStore.getSnapshot().isExpanded).toBe(true);
+      expect(toastStore.isChannelExpanded()).toBe(true);
 
       toastStore.collapse();
-      expect(toastStore.getSnapshot().isExpanded).toBe(false);
+      expect(toastStore.isChannelExpanded()).toBe(false);
 
       toastStore.expand();
-      expect(toastStore.getSnapshot().isExpanded).toBe(true);
+      expect(toastStore.isChannelExpanded()).toBe(true);
     });
   });
 

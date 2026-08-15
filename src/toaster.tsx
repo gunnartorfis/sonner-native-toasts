@@ -13,7 +13,13 @@ import {
   type ToastPosition,
   type ToastProps,
 } from './types';
-import { toastStore } from './toast-store';
+import {
+  channelOf,
+  DEFAULT_CHANNEL,
+  getChannelExpanded,
+  getChannelOverlay,
+  toastStore,
+} from './toast-store';
 const allPositions: ToastPosition[] = ['top-center', 'bottom-center', 'center'];
 
 const EMPTY_TOAST_OPTIONS: NonNullable<ToasterProps['toastOptions']> = {};
@@ -66,6 +72,8 @@ function orderToastsFromPosition(
 
 export const Toaster: React.FC<ToasterProps> = ({
   ToasterOverlayWrapper,
+  id,
+  fullWindowOverlay = true,
   ...toasterProps
 }) => {
   const storeState = React.useSyncExternalStore(
@@ -74,16 +82,30 @@ export const Toaster: React.FC<ToasterProps> = ({
     toastStore.getSnapshot
   );
 
-  const {
-    toasts,
-    shouldShowOverlay,
-    toastHeights,
-    isExpanded,
-    toastHeightsVersion,
-  } = storeState;
+  const { toasts: allToasts, toastHeights, toastHeightsVersion } = storeState;
+
+  const channel = id ?? DEFAULT_CHANNEL;
+  // From the SNAPSHOT, not toastStore accessors: under the React Compiler an
+  // accessor call is memoized on `channel` alone and never re-reads the store,
+  // freezing expansion/overlay at their first-render values on device.
+  const shouldShowOverlay = getChannelOverlay(storeState, channel);
+  const isExpanded = getChannelExpanded(storeState, channel);
+
+  // Channel lifetime lives HERE, not in ToasterUI: ToasterUI's position in
+  // the tree changes when the overlay wrapper mounts/unmounts, so an effect
+  // inside it would cycle the channel refcount on every overlay flip.
+  React.useEffect(() => toastStore.registerChannel(channel), [channel]);
+
+  // Channel routing, exactly web Sonner's rule: a named Toaster renders only
+  // toasts addressed to it; an unnamed one renders only unaddressed toasts.
+  const toasts = React.useMemo(
+    () => allToasts.filter((toast) => channelOf(toast) === channel),
+    [allToasts, channel]
+  );
 
   const uiProps = {
     ...toasterProps,
+    channel,
     toasts,
     toastHeights,
     isExpanded,
@@ -102,7 +124,7 @@ export const Toaster: React.FC<ToasterProps> = ({
     );
   }
 
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === 'ios' && fullWindowOverlay) {
     return (
       <FullWindowOverlay>
         <ToasterUI {...uiProps} />
@@ -115,12 +137,14 @@ export const Toaster: React.FC<ToasterProps> = ({
 
 const ToasterUI: React.FC<
   ToasterProps & {
+    channel: string;
     toasts: ToastProps[];
     toastHeights: Record<string | number, number>;
     isExpanded: boolean;
     toastHeightsVersion: number;
   }
 > = ({
+  channel,
   toasts,
   toastHeights,
   isExpanded,
@@ -151,13 +175,36 @@ const ToasterUI: React.FC<
   backgroundComponent,
 }) => {
   React.useEffect(() => {
-    toastStore.setConfig({
-      autoWiggleOnUpdate,
-      visibleToasts,
-      duration,
-      pauseWhenPageIsHidden,
-    });
-  }, [autoWiggleOnUpdate, visibleToasts, duration, pauseWhenPageIsHidden]);
+    toastStore.setConfig(
+      {
+        autoWiggleOnUpdate,
+        visibleToasts,
+        duration,
+        pauseWhenPageIsHidden,
+      },
+      channel
+    );
+  }, [
+    channel,
+    autoWiggleOnUpdate,
+    visibleToasts,
+    duration,
+    pauseWhenPageIsHidden,
+  ]);
+
+  const addToastInChannel = React.useCallback<
+    StableToastContextType['addToast']
+  >(
+    // The explicit field (not spread order) decides precedence, so a data
+    // object carrying a present-but-undefined toasterId key can't unbind the
+    // toast from this Toaster's channel.
+    (data) =>
+      toastStore.addToast({
+        ...data,
+        toasterId: data.toasterId ?? (channel || undefined),
+      }),
+    [channel]
+  );
 
   const value: StableToastContextType = React.useMemo(
     () => ({
@@ -168,7 +215,7 @@ const ToasterUI: React.FC<
         swipeToDismissDirection ?? toastDefaultValues.swipeToDismissDirection,
       closeButton: closeButton ?? toastDefaultValues.closeButton,
       unstyled: toastOptions.unstyled ?? toastDefaultValues.unstyled,
-      addToast: toastStore.addToast,
+      addToast: addToastInChannel,
       invert: invert ?? toastDefaultValues.invert,
       allowFontScaling: allowFontScaling ?? toastDefaultValues.allowFontScaling,
       maxFontSizeMultiplier,
@@ -186,6 +233,7 @@ const ToasterUI: React.FC<
       animation: animation ?? EMPTY_ANIMATION,
     }),
     [
+      addToastInChannel,
       duration,
       position,
       offset,
@@ -207,16 +255,36 @@ const ToasterUI: React.FC<
     ]
   );
 
+  // Keyed by channel only, so the function identities survive height writes —
+  // consumers memoized on them (positioner press handling, swipe props) don't
+  // churn every time a toast reports its layout.
+  const expand = React.useCallback(() => toastStore.expand(channel), [channel]);
+  const collapse = React.useCallback(
+    () => toastStore.collapse(channel),
+    [channel]
+  );
+  const toggleExpand = React.useCallback(
+    () => toastStore.toggleExpand(channel),
+    [channel]
+  );
+
   const dynamicValue: DynamicToastContextType = React.useMemo(
     () => ({
       toastHeights,
       toastHeightsVersion,
       isExpanded,
-      expand: toastStore.expand,
-      collapse: toastStore.collapse,
-      toggleExpand: toastStore.toggleExpand,
+      expand,
+      collapse,
+      toggleExpand,
     }),
-    [toastHeights, toastHeightsVersion, isExpanded]
+    [
+      toastHeights,
+      toastHeightsVersion,
+      isExpanded,
+      expand,
+      collapse,
+      toggleExpand,
+    ]
   );
   const onDismiss = React.useCallback<
     NonNullable<React.ComponentProps<typeof Toast>['onDismiss']>
