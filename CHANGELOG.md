@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.27.0](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.5...v0.27.0) (2026-08-15)
+
+
+### Bug Fixes
+
+* address code-review findings on channel routing ([1f7debd](https://github.com/gunnartorfis/sonner-native-toasts/commit/1f7debd90d9bf71421f864da113f7f380522efa1))
+* enable stacking on the example sheet Toaster ([3afddff](https://github.com/gunnartorfis/sonner-native-toasts/commit/3afddff749bec6ed93b0137b2e43d1fbd531d211))
+* read channel state from the snapshot, not store accessors, in render ([43c9f61](https://github.com/gunnartorfis/sonner-native-toasts/commit/43c9f6105d0d02215cdea95c27a015d6d0df1ac5))
+
+
+### Features
+
+* defer named-channel auto-close timers until the channel mounts ([15b6881](https://github.com/gunnartorfis/sonner-native-toasts/commit/15b6881b4cbe5227079cd2bb46648f2af7d0920d))
+* support multiple Toasters via named channels ([c157090](https://github.com/gunnartorfis/sonner-native-toasts/commit/c1570900a65236269fd06258eec3443fe3570af7))
+
 ## [0.26.5](https://github.com/gunnartorfis/sonner-native-toasts/compare/v0.26.4...v0.26.5) (2026-08-13)
 
 
