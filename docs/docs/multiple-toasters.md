@@ -80,6 +80,19 @@ import { Toaster, toast } from 'sonner-native';
 `fullWindowOverlay` is iOS-only and defaults to `true`; on other platforms it has
 no effect.
 
+:::warning[Swiping toasts inside a native sheet]
+An iOS sheet's pull-to-dismiss recognizer owns **vertical** pans across the
+whole sheet, and it wins the gesture arbitration against a toast's vertical
+swipe — swiping the toast up or down drags the sheet instead. This is UIKit
+behavior, not something the library can override. Two ways around it:
+
+- Give the in-sheet Toaster a horizontal swipe, which doesn't compete with the
+  sheet's gesture: `swipeToDismissDirection="left"`.
+- Or disable the sheet's interactive dismissal (e.g. `dismissible={false}` on
+  TrueSheet, or a non-interactive `presentationStyle` on `Modal`), which
+  returns vertical pans to the toast.
+:::
+
 ## Per-Toaster configuration
 
 Each Toaster owns its own configuration. `visibleToasts`, `duration`,

@@ -155,7 +155,11 @@ const MultipleToastersScreen: React.FC = () => {
 
             {/* fullWindowOverlay={false} is required: the default iOS
                 FullWindowOverlay lives in the app window, which this sheet is
-                presented above. */}
+                presented above.
+                swipeToDismissDirection="left": the sheet's own pull-to-dismiss
+                recognizer owns vertical pans, so vertical toast swipes lose
+                the gesture arbitration inside a native sheet. Horizontal
+                swipes don't compete with it. */}
             <Toaster
               id={SHEET_CHANNEL}
               fullWindowOverlay={false}
@@ -163,6 +167,7 @@ const MultipleToastersScreen: React.FC = () => {
               visibleToasts={2}
               enableStacking
               closeButton
+              swipeToDismissDirection="left"
             />
           </SafeAreaView>
         </GestureHandlerRootView>
