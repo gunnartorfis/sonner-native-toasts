@@ -93,6 +93,12 @@ export default function RootLayout() {
 
 This ensures the toasts will be displayed across all screens in your app.
 
+> **Note:** Mount exactly one `<Toaster />` per app. The toast store is a shared, module-level
+> singleton, so every mounted `<Toaster />` renders every `toast()` call. A second one - easy to
+> add by accident in a larger codebase, e.g. inside a separate internal package or provider that
+> isn't aware the host app already has one - will silently duplicate every toast instead of
+> erroring, which can be tricky to track down.
+
 ### Show a toast
 
 ```typescript
