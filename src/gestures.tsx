@@ -12,13 +12,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useToastContext } from './context';
 import { easeInOutCircFn } from './easings';
+import { webDeps } from './reanimated-deps';
 import type { ToastPosition, ToastProps } from './types';
 
-
-type ToastSwipeHandlerProps = Pick<
-  ToastProps,
-  'important'
-> & {
+type ToastSwipeHandlerProps = Pick<ToastProps, 'important'> & {
   onRemove: () => void;
   style?: ViewStyle | (ViewStyle | undefined)[];
   onBegin: () => void;
@@ -45,10 +42,8 @@ export const ToastSwipeHandler: React.FC<
 }) => {
   const { width: windowWidth } = useWindowDimensions();
   const translate = useSharedValue(0);
-  const {
-    swipeToDismissDirection: direction,
-    position: positionCtx,
-  } = useToastContext();
+  const { swipeToDismissDirection: direction, position: positionCtx } =
+    useToastContext();
   const position = positionProps || positionCtx;
 
   const pan = Gesture.Pan()
@@ -165,30 +160,33 @@ export const ToastSwipeHandler: React.FC<
   });
 
   const isAndroid = Platform.OS === 'android';
-  const animatedStyle = useAnimatedStyle(() => {
-    const aStyle: ViewStyle = {
-      transform: [
-        direction === 'left'
-          ? { translateX: translate.value }
-          : {
-              translateY:
-                translate.value * (position === 'bottom-center' ? -1 : 1),
-            },
-      ],
-    };
+  const animatedStyle = useAnimatedStyle(
+    () => {
+      const aStyle: ViewStyle = {
+        transform: [
+          direction === 'left'
+            ? { translateX: translate.value }
+            : {
+                translateY:
+                  translate.value * (position === 'bottom-center' ? -1 : 1),
+              },
+        ],
+      };
 
-    if (isAndroid) {
-      aStyle.opacity = 1;
-    } else {
-      aStyle.opacity = interpolate(
-        translate.value,
-        [0, direction === 'left' ? -windowWidth : -60],
-        [1, 0]
-      );
-    }
+      if (isAndroid) {
+        aStyle.opacity = 1;
+      } else {
+        aStyle.opacity = interpolate(
+          translate.value,
+          [0, direction === 'left' ? -windowWidth : -60],
+          [1, 0]
+        );
+      }
 
-    return aStyle;
-  }, [direction, translate, windowWidth]);
+      return aStyle;
+    },
+    webDeps([direction, translate, windowWidth])
+  );
 
   return (
     <GestureDetector gesture={Gesture.Race(tap, pan)}>

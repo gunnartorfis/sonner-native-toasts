@@ -10,6 +10,7 @@ import {
 import type { SharedValue } from 'react-native-reanimated';
 import { STACKING_ANIMATION_DURATION } from './animations';
 import { easeOutQuartFn } from './easings';
+import { webDeps } from './reanimated-deps';
 import type { ToastPosition } from './types';
 
 // Wiggle, stacking scaleX narrowing, and the absolute stack-position style
@@ -35,57 +36,66 @@ export const useToastAnimations = ({
 }) => {
   const wiggleSharedValue = useSharedValue(1);
 
-  const wiggleAnimationStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: wiggleSharedValue.value }],
-    };
-  }, [wiggleSharedValue]);
+  const wiggleAnimationStyle = useAnimatedStyle(
+    () => {
+      return {
+        transform: [{ scale: wiggleSharedValue.value }],
+      };
+    },
+    webDeps([wiggleSharedValue])
+  );
 
   // ScaleX: visual narrowing avoids layout-width changes that cause text rewrap
   const { width: screenWidth } = useWindowDimensions();
-  const stackScaleX = useDerivedValue(() => {
-    'worklet';
-    if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
-      return withTiming(1, {
+  const stackScaleX = useDerivedValue(
+    () => {
+      'worklet';
+      if (!enableStacking || numberOfToasts <= 1 || isExpanded) {
+        return withTiming(1, {
+          duration: STACKING_ANIMATION_DURATION,
+          easing: easeOutQuartFn,
+        });
+      }
+
+      const multiplier =
+        toastPosition === 'top-center' ? index : numberOfToasts - index - 1;
+      const narrowAmount = stackGap * multiplier * 2;
+      const scale = Math.max(0.8, 1 - narrowAmount / screenWidth);
+      return withTiming(scale, {
         duration: STACKING_ANIMATION_DURATION,
         easing: easeOutQuartFn,
       });
-    }
+    },
+    webDeps([
+      enableStacking,
+      numberOfToasts,
+      index,
+      toastPosition,
+      isExpanded,
+      stackGap,
+      screenWidth,
+    ])
+  );
 
-    const multiplier =
-      toastPosition === 'top-center' ? index : numberOfToasts - index - 1;
-    const narrowAmount = stackGap * multiplier * 2;
-    const scale = Math.max(0.8, 1 - narrowAmount / screenWidth);
-    return withTiming(scale, {
-      duration: STACKING_ANIMATION_DURATION,
-      easing: easeOutQuartFn,
-    });
-  }, [
-    enableStacking,
-    numberOfToasts,
-    index,
-    toastPosition,
-    isExpanded,
-    stackGap,
-    screenWidth,
-  ]);
-
-  const absolutePositionStyle = useAnimatedStyle(() => {
-    const base: Record<string, unknown> = {
-      position: 'absolute',
-      width: '100%',
-      transform: [
-        { translateY: yPosition.value },
-        { scaleX: stackScaleX.value },
-      ],
-    };
-    if (toastPosition === 'bottom-center') {
-      base.bottom = 0;
-    } else {
-      base.top = 0;
-    }
-    return base;
-  }, [yPosition, toastPosition, stackScaleX]);
+  const absolutePositionStyle = useAnimatedStyle(
+    () => {
+      const base: Record<string, unknown> = {
+        position: 'absolute',
+        width: '100%',
+        transform: [
+          { translateY: yPosition.value },
+          { scaleX: stackScaleX.value },
+        ],
+      };
+      if (toastPosition === 'bottom-center') {
+        base.bottom = 0;
+      } else {
+        base.top = 0;
+      }
+      return base;
+    },
+    webDeps([yPosition, toastPosition, stackScaleX])
+  );
 
   const wiggle = React.useCallback(() => {
     'worklet';
