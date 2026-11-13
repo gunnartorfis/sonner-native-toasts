@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useToastContext } from './context';
 import { easeInOutCircFn } from './easings';
+import { webDeps } from './reanimated-deps';
 import type { ToastPosition, ToastProps } from './types';
 
 
@@ -188,7 +189,7 @@ export const ToastSwipeHandler: React.FC<
     }
 
     return aStyle;
-  }, [direction, translate, windowWidth]);
+  }, webDeps([direction, translate, windowWidth]));
 
   return (
     <GestureDetector gesture={Gesture.Race(tap, pan)}>

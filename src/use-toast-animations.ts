@@ -10,6 +10,7 @@ import {
 import type { SharedValue } from 'react-native-reanimated';
 import { STACKING_ANIMATION_DURATION } from './animations';
 import { easeOutQuartFn } from './easings';
+import { webDeps } from './reanimated-deps';
 import type { ToastPosition } from './types';
 
 // Wiggle, stacking scaleX narrowing, and the absolute stack-position style
@@ -39,7 +40,7 @@ export const useToastAnimations = ({
     return {
       transform: [{ scale: wiggleSharedValue.value }],
     };
-  }, [wiggleSharedValue]);
+  }, webDeps([wiggleSharedValue]));
 
   // ScaleX: visual narrowing avoids layout-width changes that cause text rewrap
   const { width: screenWidth } = useWindowDimensions();
@@ -60,7 +61,7 @@ export const useToastAnimations = ({
       duration: STACKING_ANIMATION_DURATION,
       easing: easeOutQuartFn,
     });
-  }, [
+  }, webDeps([
     enableStacking,
     numberOfToasts,
     index,
@@ -68,7 +69,7 @@ export const useToastAnimations = ({
     isExpanded,
     stackGap,
     screenWidth,
-  ]);
+  ]));
 
   const absolutePositionStyle = useAnimatedStyle(() => {
     const base: Record<string, unknown> = {
@@ -85,7 +86,7 @@ export const useToastAnimations = ({
       base.top = 0;
     }
     return base;
-  }, [yPosition, toastPosition, stackScaleX]);
+  }, webDeps([yPosition, toastPosition, stackScaleX]));
 
   const wiggle = React.useCallback(() => {
     'worklet';

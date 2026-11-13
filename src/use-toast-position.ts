@@ -3,6 +3,7 @@ import { useDerivedValue, withTiming } from 'react-native-reanimated';
 import { STACKING_ANIMATION_DURATION } from './animations';
 import { easeOutQuartFn } from './easings';
 import { calculateToastPosition } from './position-utils';
+import { webDeps } from './reanimated-deps';
 import type { ToastPosition } from './types';
 
 export const useToastPosition = ({
@@ -54,7 +55,7 @@ export const useToastPosition = ({
       duration: STACKING_ANIMATION_DURATION,
       easing: easeOutQuartFn,
     });
-  }, [
+  }, webDeps([
     id,
     index,
     numberOfToasts,
@@ -65,7 +66,7 @@ export const useToastPosition = ({
     orderedIdsKey,
     isExpanded,
     stackGap,
-  ]);
+  ]));
 
   return yPosition;
 };
