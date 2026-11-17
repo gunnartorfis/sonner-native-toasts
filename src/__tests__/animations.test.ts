@@ -6,23 +6,59 @@ const fakeToasterValue = jest.fn() as unknown as ToastEntryExitAnimation;
 const fakeToastValue = jest.fn() as unknown as ToastEntryExitAnimation;
 
 describe('resolveAnimationField', () => {
+  it('disables the animation when the toaster specifies "none"', () => {
+    expect(
+      resolveAnimationField(undefined, 'none', fakeDefault)
+    ).toBeUndefined();
+  });
+
+  it('lets per-toast "none" disable a custom toaster animation', () => {
+    expect(
+      resolveAnimationField('none', fakeToasterValue, fakeDefault)
+    ).toBeUndefined();
+  });
+
+  it('lets a per-toast animation override toaster "none"', () => {
+    expect(resolveAnimationField(fakeToastValue, 'none', fakeDefault)).toBe(
+      fakeToastValue
+    );
+  });
+
+  it('lets per-toast "default" restore a disabled toaster animation', () => {
+    expect(resolveAnimationField('default', 'none', fakeDefault)).toBe(
+      fakeDefault
+    );
+  });
+
   it('returns the library default when both toast and toaster are undefined', () => {
     const result = resolveAnimationField(undefined, undefined, fakeDefault);
     expect(result).toBe(fakeDefault);
   });
 
   it('returns the toaster value when per-toast is undefined', () => {
-    const result = resolveAnimationField(undefined, fakeToasterValue, fakeDefault);
+    const result = resolveAnimationField(
+      undefined,
+      fakeToasterValue,
+      fakeDefault
+    );
     expect(result).toBe(fakeToasterValue);
   });
 
   it('returns the per-toast value over the toaster value', () => {
-    const result = resolveAnimationField(fakeToastValue, fakeToasterValue, fakeDefault);
+    const result = resolveAnimationField(
+      fakeToastValue,
+      fakeToasterValue,
+      fakeDefault
+    );
     expect(result).toBe(fakeToastValue);
   });
 
   it('treats the per-toast "default" sentinel as an explicit reset to the library default', () => {
-    const result = resolveAnimationField('default', fakeToasterValue, fakeDefault);
+    const result = resolveAnimationField(
+      'default',
+      fakeToasterValue,
+      fakeDefault
+    );
     expect(result).toBe(fakeDefault);
   });
 
@@ -32,7 +68,11 @@ describe('resolveAnimationField', () => {
   });
 
   it('lets a per-toast value override a toaster "default" sentinel', () => {
-    const result = resolveAnimationField(fakeToastValue, 'default', fakeDefault);
+    const result = resolveAnimationField(
+      fakeToastValue,
+      'default',
+      fakeDefault
+    );
     expect(result).toBe(fakeToastValue);
   });
 });

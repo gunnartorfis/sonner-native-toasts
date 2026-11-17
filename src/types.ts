@@ -50,7 +50,8 @@ export type ToastEntryExitAnimation =
   | BaseAnimationBuilder
   | typeof BaseAnimationBuilder
   | Keyframe
-  | 'default';
+  | 'default'
+  | 'none';
 
 export type ToastAnimation = {
   enter?: ToastEntryExitAnimation;

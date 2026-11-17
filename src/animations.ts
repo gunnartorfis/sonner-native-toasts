@@ -4,12 +4,18 @@ import { getEnteringTranslateY, getExitingTranslateY } from './animation-utils';
 import { toastDefaultValues } from './constants';
 import { useToastContext } from './context';
 import { easeInOutCubic, easeOutQuartFn } from './easings';
-import type { ToastAnimation, ToastEntryExitAnimation, ToastPosition } from './types';
+import type {
+  ToastAnimation,
+  ToastEntryExitAnimation,
+  ToastPosition,
+} from './types';
 
 export const ENTERING_ANIMATION_DURATION = 300;
 export const STACKING_ANIMATION_DURATION = 600;
 
-type ResolvedAnimation = Exclude<ToastEntryExitAnimation, 'default'>;
+type ResolvedAnimation =
+  | Exclude<ToastEntryExitAnimation, 'default' | 'none'>
+  | undefined;
 
 export const resolveAnimationField = (
   toastValue: ToastEntryExitAnimation | undefined,
@@ -17,6 +23,9 @@ export const resolveAnimationField = (
   defaultValue: EntryExitAnimationFunction
 ): ResolvedAnimation => {
   const resolved = toastValue !== undefined ? toastValue : toasterValue;
+  if (resolved === 'none') {
+    return undefined;
+  }
   if (resolved === undefined || resolved === 'default') {
     return defaultValue;
   }
@@ -29,7 +38,11 @@ export const useToastLayoutAnimations = (
   isHiddenByLimit?: boolean,
   numberOfToasts?: number
 ) => {
-  const { position: positionCtx, gap, animation: animationCtx } = useToastContext();
+  const {
+    position: positionCtx,
+    gap,
+    animation: animationCtx,
+  } = useToastContext();
   const position = positionProp || positionCtx;
   const stackGap = gap ?? toastDefaultValues.stackGap;
   const reducedMotion = useReducedMotion();
@@ -59,15 +72,17 @@ export const useToastLayoutAnimations = (
     defaultEntering
   );
 
-  // Overflow-cull (isHiddenByLimit) always uses the library fade exit.
-  // User-supplied custom exits would look wrong on a buried toast.
-  const exiting = isHiddenByLimit
-    ? defaultExiting
-    : resolveAnimationField(
-        animationProp?.exit,
-        animationCtx?.exit,
-        defaultExiting
-      );
+  const resolvedExiting = resolveAnimationField(
+    animationProp?.exit,
+    animationCtx?.exit,
+    defaultExiting
+  );
+
+  // Overflow-cull uses the library fade unless exit animations are disabled.
+  const exiting =
+    isHiddenByLimit && resolvedExiting !== undefined
+      ? defaultExiting
+      : resolvedExiting;
 
   return { entering, exiting };
 };
