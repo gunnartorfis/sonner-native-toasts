@@ -68,10 +68,22 @@ toast.success('Reset to default exit', {
 });
 ```
 
+Disable either animation with `'none'`, Toaster-wide or per toast:
+
+```tsx
+<Toaster animation={{ exit: 'none' }} />;
+
+toast.success('Saved', {
+  animation: { enter: 'none', exit: 'none' },
+});
+```
+
+An omitted or `undefined` value inherits the Toaster setting, then falls back to the library default. Use `'default'` per toast to restore an animation disabled by the Toaster.
+
 Notes:
 
 - The reduced-motion system setting still disables all animations, including custom ones.
-- When a toast is removed because the stack overflows `visibleToasts`, the library uses its built-in fade exit regardless of any custom `exit` — a custom slide on a buried toast would look wrong.
+- When a toast is removed because the stack overflows `visibleToasts`, the library uses its built-in fade exit instead of a custom `exit` — a custom slide on a buried toast would look wrong. An explicit `exit: 'none'` still disables the exit animation.
 
 ### Default styles for toasts
 

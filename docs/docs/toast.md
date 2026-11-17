@@ -162,7 +162,7 @@ toast.success('Saved', {
 });
 ```
 
-Per-toast `animation` values override any `animation` configured on the `<Toaster />`, per-property. Pass the string `'default'` for either side to revert to the library default just for this toast.
+Per-toast `animation` values override any `animation` configured on the `<Toaster />`, per-property. Pass `'none'` for either side to disable that animation, or `'default'` to revert to the library default just for this toast.
 
 See [Toaster › Enter / Exit animations](./Toaster#enter--exit-animations) for the full type and behavior reference (reduced motion handling, stack overflow exception, etc.).
 
