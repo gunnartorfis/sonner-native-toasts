@@ -203,6 +203,9 @@ export const ToastSwipeHandler: React.FC<
               },
           {
             width: '100%',
+            // Full width, so pass touches beside the toast through to the app.
+            // Gestures still fire: the handler records its child's touches.
+            pointerEvents: 'box-none',
           },
           Platform.OS === 'android'
             ? {
