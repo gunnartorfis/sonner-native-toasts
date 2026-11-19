@@ -203,9 +203,20 @@ const ToastComponent = React.forwardRef<ToastRef, ToastInternalProps>(
 
     if (jsx) {
       return (
-        <Animated.View style={[absolutePositionStyle, { zIndex: stackZIndex }]}>
+        <Animated.View
+          style={[
+            absolutePositionStyle,
+            { zIndex: stackZIndex },
+            passThroughTouchesStyle,
+          ]}
+        >
           <ToastSwipeHandler {...toastSwipeHandlerProps}>
-            <Animated.View ref={toastRef} entering={entering} exiting={exiting}>
+            <Animated.View
+              ref={toastRef}
+              style={passThroughTouchesStyle}
+              entering={entering}
+              exiting={exiting}
+            >
               {jsx}
             </Animated.View>
           </ToastSwipeHandler>
@@ -225,9 +236,17 @@ const ToastComponent = React.forwardRef<ToastRef, ToastInternalProps>(
       : undefined;
 
     return (
-      <Animated.View style={[absolutePositionStyle, { zIndex: stackZIndex }]}>
+      <Animated.View
+        style={[
+          absolutePositionStyle,
+          { zIndex: stackZIndex },
+          passThroughTouchesStyle,
+        ]}
+      >
         <ToastSwipeHandler {...toastSwipeHandlerProps}>
-          <Animated.View style={wiggleAnimationStyle}>
+          <Animated.View
+            style={[wiggleAnimationStyle, passThroughTouchesStyle]}
+          >
             <Animated.View
               ref={toastRef}
               style={[
@@ -282,6 +301,14 @@ ToastComponent.displayName = 'Toast';
 // Default shallow comparison — effective because ToasterUI hands out
 // stable identities for orderedToastIds/callbacks/toast entries.
 export const Toast = React.memo(ToastComponent);
+
+// The wrappers around a toast span the full width of the screen (the stack
+// positioning view, the swipe handler, the measured content view), while the
+// toast itself is often narrower: a custom pill, or a default toast with
+// horizontal margins. `box-none` lets those wrappers pass touches through to
+// whatever sits beside the toast, e.g. header buttons, while the toast and its
+// children still receive them.
+const passThroughTouchesStyle = { pointerEvents: 'box-none' } as const;
 
 const elevationStyle = {
   shadowOpacity: 0.0015 * 4 + 0.1,
